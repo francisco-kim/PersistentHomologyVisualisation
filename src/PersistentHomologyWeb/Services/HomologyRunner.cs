@@ -26,7 +26,7 @@ public sealed class HomologyRunner
     public bool IsPlaying { get; set; }
     public PersistencePair? HoveredPair { get; set; }
     public bool RemoveMode { get; set; }
-    public double PresetNoise { get; set; } = 0.15;
+    public double PresetNoise { get; set; } = 0.10;
     public int Seed { get; private set; }
 
     /// <summary>Flattened [x0,y0,x1,y1,...] for zero-copy interop.</summary>
