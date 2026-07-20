@@ -69,9 +69,16 @@
     <div data-katex="H_k \;=\; \ker \partial_k \,/\, \operatorname{im} \partial_{k+1}" data-katex-display></div>
     <p>
         Its rank is the <strong>Betti number</strong> <span data-katex="\beta_k"></span>
-        — <span data-katex="\beta_0"></span> counts pieces, <span data-katex="\beta_1"></span>
-        counts loops, which is exactly what the "pieces" and "holes" readouts
-        on the simulator show at the current <span data-katex="\varepsilon"></span>.
+        — <span data-katex="\beta_0"></span> counts pieces,
+        <span data-katex="\beta_1"></span> counts loops, the
+        <strong>one-dimensional holes</strong> bounded by edges rather than
+        surfaces, which is exactly what the "pieces" and "holes" readouts on
+        the simulator show at the current <span data-katex="\varepsilon"></span>.
+        Higher <span data-katex="\beta_k"></span> would count
+        higher-dimensional voids (<span data-katex="\beta_2"></span> for
+        cavities enclosed by triangles, and so on), but this app only builds
+        the complex up to triangles, so <span data-katex="k \le 1"></span> is
+        all it can ever detect.
     </p>
 
     <h2>A note on coefficients: why <span data-katex="\mathbb{Z}/2"></span>?</h2>
@@ -111,7 +118,8 @@
 
     <h2>How to read the barcode</h2>
     <p>
-        Every bar is one feature: a connected piece (H0) or a loop (H1). A bar
+        Every bar is one feature: a connected piece (H0) or a
+        one-dimensional hole — a loop (H1). A bar
         spans exactly the range of <span data-katex="\varepsilon"></span>
         where that feature exists — it appears at its <em>birth</em> radius
         and disappears at its <em>death</em> radius, where it merges into a

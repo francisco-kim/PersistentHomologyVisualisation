@@ -149,7 +149,12 @@
         <strong>Betti number</strong> <span data-katex="\beta_0"></span>; an
         independent loop — an edge-path that closes up but isn't the
         boundary of any triangle in the complex — is
-        <span data-katex="\beta_1"></span>. Every time two pieces merge,
+        <span data-katex="\beta_1"></span>, a <strong>one-dimensional
+        hole</strong> (a higher-dimensional void, enclosed by surfaces rather
+        than edges, would be <span data-katex="\beta_2"></span> — this app
+        only builds up to triangles, so it only ever finds
+        <span data-katex="\beta_0"></span> and
+        <span data-katex="\beta_1"></span>). Every time two pieces merge,
         <span data-katex="\beta_0"></span> drops by one; every time a triangle
         fills in a loop, <span data-katex="\beta_1"></span> drops by one.
         <span data-katex="\beta_0"></span> and <span data-katex="\beta_1"></span>
@@ -159,7 +164,8 @@
 
     <h2>How to read the barcode</h2>
     <p>
-        Every bar is one feature: a connected piece (H0) or a loop (H1). A bar
+        Every bar is one feature: a connected piece (H0) or a
+        one-dimensional hole — a loop (H1). A bar
         spans exactly the range of <span data-katex="\varepsilon"></span>
         where that feature exists — it appears at its <em>birth</em> radius
         and disappears at its <em>death</em> radius, where it merges into a
