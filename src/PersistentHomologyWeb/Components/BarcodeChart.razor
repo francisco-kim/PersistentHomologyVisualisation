@@ -13,7 +13,7 @@
         @SvgText(SweepLabelX, TickLabelY, "barcode-sweep-label", "middle", $"ε = {Epsilon:F0}")
 
         <g class="barcode-h0">
-            @SvgText(PadLeft, _h0LabelY - 3, "barcode-group-label", "start", $"Pieces (H0) — {H0Visible.Count} of {H0Total}")
+            @SvgText(PadLeft, _h0LabelY - 3, "barcode-group-label", "start", $"Pieces ({Sub("H", "0")}) — {H0Visible.Count} of {H0Total}")
             @for (int i = 0; i < H0Visible.Count; i++)
             {
                 var pair = H0Visible[i];
@@ -23,7 +23,7 @@
         </g>
 
         <g class="barcode-h1">
-            @SvgText(PadLeft, _h1LabelY - 3, "barcode-group-label", "start", $"Holes (H1) — {H1Visible.Count} of {H1Total}")
+            @SvgText(PadLeft, _h1LabelY - 3, "barcode-group-label", "start", $"Holes ({Sub("H", "1")}) — {H1Visible.Count} of {H1Total}")
             @for (int i = 0; i < H1Visible.Count; i++)
             {
                 var pair = H1Visible[i];
@@ -144,4 +144,8 @@
     // Razor reserves the <text> tag, so SVG text elements are emitted as markup.
     private static MarkupString SvgText(double x, double y, string cssClass, string anchor, string content) =>
         new($"<text x=\"{x:0.#}\" y=\"{y:0.#}\" class=\"{cssClass}\" text-anchor=\"{anchor}\">{content}</text>");
+
+    // SVG has no math renderer, so H0/H1 become H with a native subscript tspan (KaTeX outputs HTML, not SVG).
+    private static string Sub(string baseText, string subscript) =>
+        $"{baseText}<tspan baseline-shift=\"sub\" font-size=\"0.7em\">{subscript}</tspan>";
 }
