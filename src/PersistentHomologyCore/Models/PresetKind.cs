@@ -4,6 +4,7 @@ public enum PresetKind
 {
     NoisyCircle,
     TwoCircles,
+    ThreeCircles,
     FigureEight,
     Annulus,
     RandomClusters,

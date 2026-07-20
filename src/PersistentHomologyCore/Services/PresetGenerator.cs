@@ -3,9 +3,9 @@ using PersistentHomologyCore.Models;
 namespace PersistentHomologyCore.Services;
 
 /// <summary>
-/// Deterministic point-cloud generators for the six presets. Every method is
-/// pure in (kind, count, noise, seed): same inputs always produce the same
-/// cloud, and noise = 0 lies exactly on the ideal locus (no jitter).
+/// Deterministic point-cloud generators for the seven presets. Every method
+/// is pure in (kind, count, noise, seed): same inputs always produce the
+/// same cloud, and noise = 0 lies exactly on the ideal locus (no jitter).
 /// </summary>
 public static class PresetGenerator
 {
@@ -29,6 +29,7 @@ public static class PresetGenerator
         {
             PresetKind.NoisyCircle => NoisyCircle(count, noise, radius, cx, cy, random),
             PresetKind.TwoCircles => TwoCircles(count, noise, radius, cx, cy, random),
+            PresetKind.ThreeCircles => ThreeCircles(count, noise, radius, cx, cy, random),
             PresetKind.FigureEight => FigureEight(count, noise, radius, cx, cy, random),
             PresetKind.Annulus => Annulus(count, noise, radius, cx, cy, random),
             PresetKind.RandomClusters => RandomClusters(count, noise, width, height, random),
@@ -67,6 +68,31 @@ public static class PresetGenerator
             double r = smallRadius + jitter * NextGaussian(random);
             double centerX = cx + (left ? -gap / 2 : gap / 2);
             points.Add(new Point2D(centerX + r * Math.Cos(angle), cy + r * Math.Sin(angle)));
+        }
+        return points;
+    }
+
+    private static List<Point2D> ThreeCircles(int count, double noise, double radius, double cx, double cy, Random random)
+    {
+        var points = new List<Point2D>(count);
+        double smallRadius = radius * 0.35;
+        double arrangementRadius = radius * 0.55;
+        double jitter = noise * smallRadius * 0.25;
+        int per = count / 3;
+
+        for (int c = 0; c < 3; c++)
+        {
+            int localCount = c < 2 ? per : count - 2 * per;
+            double centerAngle = -Math.PI / 2 + c * 2 * Math.PI / 3;
+            double centerX = cx + arrangementRadius * Math.Cos(centerAngle);
+            double centerY = cy + arrangementRadius * Math.Sin(centerAngle);
+
+            for (int i = 0; i < localCount; i++)
+            {
+                double angle = 2 * Math.PI * i / localCount;
+                double r = smallRadius + jitter * NextGaussian(random);
+                points.Add(new Point2D(centerX + r * Math.Cos(angle), centerY + r * Math.Sin(angle)));
+            }
         }
         return points;
     }

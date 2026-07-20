@@ -196,9 +196,10 @@
     // UI-only cap: keeps the interactive point-cloud editing responsive.
     // PresetGenerator itself still allows up to PresetGenerator.MaxPoints.
     private const int MaxSliderPoints = 100;
+    private const int DefaultPointCount = 60;
 
     private PresetKind _selectedPreset = PresetKind.NoisyCircle;
-    private int _pointCount = 60;
+    private int _pointCount = DefaultPointCount;
     private bool _moduleReady;
 
     private IJSObjectReference? _module;
@@ -378,6 +379,7 @@
         if (Enum.TryParse<PresetKind>(e.Value?.ToString(), out var kind))
         {
             _selectedPreset = kind;
+            _pointCount = DefaultPointCount;
             Runner.LoadPreset(_selectedPreset, _pointCount);
             RedrawAll();
         }
@@ -443,6 +445,7 @@
     {
         PresetKind.NoisyCircle => "Noisy circle",
         PresetKind.TwoCircles => "Two circles",
+        PresetKind.ThreeCircles => "Three circles",
         PresetKind.FigureEight => "Figure eight",
         PresetKind.Annulus => "Annulus",
         PresetKind.RandomClusters => "Random clusters",
