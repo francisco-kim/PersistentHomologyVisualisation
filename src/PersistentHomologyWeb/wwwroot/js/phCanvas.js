@@ -130,8 +130,9 @@ export function drawHighlight(id, pointXyView, verticesView, edgePairsView) {
 
   ctx.strokeStyle = highlight;
   ctx.lineWidth = 2.5;
-  for (let i = 0; i < vertices.length; i++) {
-    const v = vertices[i];
+  const ringed = new Set(vertices);
+  for (let i = 0; i < edgePairs.length; i++) ringed.add(edgePairs[i]);
+  for (const v of ringed) {
     ctx.beginPath();
     ctx.arc(pointXy[2 * v], pointXy[2 * v + 1], 7, 0, 2 * Math.PI);
     ctx.stroke();
