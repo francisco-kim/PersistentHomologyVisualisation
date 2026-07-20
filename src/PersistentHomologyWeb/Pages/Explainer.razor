@@ -74,11 +74,20 @@
         <strong>one-dimensional holes</strong> bounded by edges rather than
         surfaces, which is exactly what the "pieces" and "holes" readouts on
         the simulator show at the current <span data-katex="\varepsilon"></span>.
-        Higher <span data-katex="\beta_k"></span> would count
-        higher-dimensional voids (<span data-katex="\beta_2"></span> for
-        cavities enclosed by triangles, and so on), but this app only builds
-        the complex up to triangles, so <span data-katex="k \le 1"></span> is
-        all it can ever detect.
+        Higher <span data-katex="\beta_k"></span> counts
+        higher-dimensional holes: <span data-katex="\beta_2"></span> is a
+        cavity enclosed by a shell of triangles rather than a loop of edges —
+        the hollow inside a football, not a ring. A standard example is the
+        <strong>torus</strong> (the surface of a doughnut), which has
+        <span data-katex="\beta_0=1"></span> (it's one piece),
+        <span data-katex="\beta_1=2"></span> (two independent loops that
+        can't be shrunk to a point or filled in — one running round the tube,
+        one round the central hole) and <span data-katex="\beta_2=1"></span>
+        (the cavity its surface encloses). This app only builds the complex
+        up to triangles, so <span data-katex="k \le 1"></span> is all it can
+        ever detect — a torus point cloud would show up here only through
+        its two <span data-katex="\beta_1"></span> loops, with the
+        <span data-katex="\beta_2"></span> cavity invisible to it.
     </p>
 
     <h2>A note on coefficients: why <span data-katex="\mathbb{Z}/2"></span>?</h2>
