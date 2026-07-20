@@ -117,6 +117,7 @@ export function drawHighlight(id, pointXyView, verticesView, edgePairsView) {
   const ctx = state.ctx;
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   const highlight = cssVar('--series-8', '#eb6834');
+  const witnessColour = cssVar('--series-2', '#1baf7a');
 
   ctx.strokeStyle = highlight;
   ctx.lineWidth = 3;
@@ -128,14 +129,28 @@ export function drawHighlight(id, pointXyView, verticesView, edgePairsView) {
   }
   ctx.stroke();
 
-  ctx.strokeStyle = highlight;
+  // H0 pairs ring every point of the dying component in the highlight
+  // colour; the point the merge edge reaches into - in the other,
+  // surviving component - rings in a different colour, so it reads as
+  // "why it died" rather than "what died". H1 pairs carry no vertices
+  // (the loop's edges are the whole representative), so this is skipped.
   ctx.lineWidth = 2.5;
-  const ringed = new Set(vertices);
-  for (let i = 0; i < edgePairs.length; i++) ringed.add(edgePairs[i]);
-  for (const v of ringed) {
+  const members = new Set(vertices);
+  ctx.strokeStyle = highlight;
+  for (const v of members) {
     ctx.beginPath();
     ctx.arc(pointXy[2 * v], pointXy[2 * v + 1], 7, 0, 2 * Math.PI);
     ctx.stroke();
+  }
+  if (members.size > 0) {
+    ctx.strokeStyle = witnessColour;
+    for (let i = 0; i < edgePairs.length; i++) {
+      const v = edgePairs[i];
+      if (members.has(v)) continue;
+      ctx.beginPath();
+      ctx.arc(pointXy[2 * v], pointXy[2 * v + 1], 7, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
   }
 }
 
