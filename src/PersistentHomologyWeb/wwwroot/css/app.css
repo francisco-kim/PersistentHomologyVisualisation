@@ -367,6 +367,10 @@ input[type="number"] {
     display: block;
 }
 
+.barcode-scrubbable {
+    cursor: ew-resize;
+}
+
 .chart-grid {
     stroke: var(--grid-line);
     stroke-width: 1;
@@ -410,6 +414,12 @@ input[type="number"] {
 .barcode-sweep {
     stroke: var(--accent);
     stroke-width: 1.5;
+}
+
+.barcode-sweep-label {
+    fill: var(--accent);
+    font-size: 10px;
+    font-weight: 600;
 }
 
 .barcode-group-label {

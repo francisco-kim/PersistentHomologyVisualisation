@@ -1,12 +1,16 @@
 @* Primary, pedagogical view: one bar per feature, x-axis = epsilon. Long bars
-   are real shape, short bars are noise - the sweep line shows "now". *@
+   are real shape, short bars are noise - the sweep line shows "now", and
+   the chart doubles as an epsilon scrubber: click or drag anywhere on it. *@
+@using PersistentHomologyWeb.Interop
 
 <div class="chart-card">
     <div class="chart-title">Barcode</div>
-    <svg viewBox="0 0 @Width @Height" preserveAspectRatio="none" class="chart-svg" role="img" aria-label="Persistence barcode">
+    <svg id="@SvgId" viewBox="0 0 @Width @Height" preserveAspectRatio="none" class="chart-svg barcode-scrubbable" role="img" aria-label="Persistence barcode, and epsilon scrubber"
+         @onmousedown="OnScrubDown" @onmousemove="OnScrubMove" @onmouseup="OnScrubEnd" @onmouseleave="OnScrubEnd">
         <line x1="@PadLeft" x2="@(Width - PadRight)" y1="@(Height - PadBottom)" y2="@(Height - PadBottom)" class="chart-grid" />
-        @SvgText(PadLeft, TickLabelY, "chart-tick", "start", "ε = 0")
+        @SvgText(PadLeft, TickLabelY, "chart-tick", "start", "0")
         @SvgText(Width - PadRight, TickLabelY, "chart-tick", "end", MaxEpsilon.ToString("F0"))
+        @SvgText(SweepLabelX, TickLabelY, "barcode-sweep-label", "middle", $"ε = {Epsilon:F0}")
 
         <g class="barcode-h0">
             @SvgText(PadLeft, _h0LabelY - 3, "barcode-group-label", "start", $"Pieces (H0) — {H0Visible.Count} of {H0Total}")
@@ -50,6 +54,10 @@
     [Parameter] public double MaxEpsilon { get; set; } = 260;
     [Parameter] public PersistencePair? Hovered { get; set; }
     [Parameter] public EventCallback<PersistencePair?> OnHover { get; set; }
+    [Parameter] public EventCallback<double> OnEpsilonChange { get; set; }
+
+    private const string SvgId = "ph-barcode-svg";
+    private bool _scrubbing;
 
     private int Height { get; set; } = 160;
     private double _h0LabelY;
@@ -80,7 +88,34 @@
     private double X(double epsilon) =>
         PadLeft + Math.Clamp(epsilon, 0, MaxEpsilon) / MaxEpsilon * (Width - PadLeft - PadRight);
 
+    // Keeps the moving "ε = ..." label fully on-chart and clear of the
+    // fixed corner ticks, even when the sweep line sits at either extreme.
+    private double SweepLabelX => Math.Clamp(X(Epsilon), PadLeft + 20, Width - PadRight - 20);
+
     private double RowY(double groupLabelY, int rowIndex) => groupLabelY + rowIndex * RowHeight + 3;
+
+    private void OnScrubDown(MouseEventArgs e)
+    {
+        _scrubbing = true;
+        ScrubTo(e);
+    }
+
+    private void OnScrubMove(MouseEventArgs e)
+    {
+        if (_scrubbing) ScrubTo(e);
+    }
+
+    private void OnScrubEnd(MouseEventArgs e) => _scrubbing = false;
+
+    private void ScrubTo(MouseEventArgs e)
+    {
+        double clientWidth = CanvasInterop.GetClientSize(SvgId);
+        if (clientWidth <= 0) return;
+
+        double svgX = e.OffsetX * (Width / clientWidth);
+        double epsilon = (svgX - PadLeft) / (Width - PadLeft - PadRight) * MaxEpsilon;
+        OnEpsilonChange.InvokeAsync(Math.Clamp(epsilon, 0, MaxEpsilon));
+    }
 
     private RenderFragment RenderBar(PersistencePair pair, double y) => builder =>
     {

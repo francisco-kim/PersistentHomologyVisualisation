@@ -101,7 +101,7 @@
 <div class="charts-grid">
     <BarcodeChart H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
                   Epsilon="Runner.Epsilon" MaxEpsilon="HomologyRunner.MaxEpsilon"
-                  Hovered="Runner.HoveredPair" OnHover="OnBarHover" />
+                  Hovered="Runner.HoveredPair" OnHover="OnBarHover" OnEpsilonChange="OnBarcodeEpsilonChange" />
     @if (Runner.ShowAdvancedView)
     {
         <PersistenceDiagram H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
@@ -340,6 +340,15 @@
             Runner.Epsilon = value;
             RedrawComplex();
         }
+    }
+
+    // Clicking/dragging the barcode itself scrubs epsilon the same way the
+    // slider does; a manual scrub also interrupts any running Play.
+    private void OnBarcodeEpsilonChange(double epsilon)
+    {
+        Runner.IsPlaying = false;
+        Runner.Epsilon = epsilon;
+        RedrawComplex();
     }
 
     private void OnShowBallsChanged(ChangeEventArgs e)
