@@ -1,0 +1,167 @@
+@page "/explainer"
+@inject IJSRuntime JS
+
+<h1 class="page-title">The maths, in detail</h1>
+<p class="page-intro">
+    The full walkthrough behind the <a href="/">simulator</a>: the Vietoris–Rips
+    complex, the filtration, homology and Betti numbers, why this app computes
+    over <span data-katex="\mathbb{Z}/2"></span>, the boundary-matrix pairing
+    algorithm, and the persistence diagram's stability guarantee.
+</p>
+
+<section class="explainer">
+    <h2>What is this?</h2>
+    <p>
+        Sample some points off a shape — say, a wobbly circle. Around every
+        point, grow a disc of radius <span data-katex="\varepsilon/2"></span>.
+        For small <span data-katex="\varepsilon"></span> the discs are tiny
+        and disjoint: just confetti. Make <span data-katex="\varepsilon"></span>
+        huge and everything overlaps into one blob. Somewhere in between, the
+        discs merge into a ring with an empty middle — the circle's hole is
+        unmistakable. <strong>Persistent homology is the bookkeeping of that
+        movie</strong>: which pieces and holes exist at which radius, and how
+        long each one survives.
+    </p>
+
+    <h2>Growing balls: the Vietoris–Rips complex</h2>
+    <p>
+        At radius <span data-katex="\varepsilon"></span>, connect two points
+        with an edge whenever their discs touch, and fill in a triangle
+        whenever three points are all mutually close. Formally, this is the
+        <strong>Vietoris–Rips complex</strong>:
+    </p>
+    <div data-katex="\mathrm{VR}_\varepsilon(X) \;=\; \{\,\sigma \subseteq X \;:\; \operatorname{diam}(\sigma) \le \varepsilon\,\}"
+         data-katex-display></div>
+    <p>
+        every subset of points whose diameter — its largest pairwise distance
+        — is at most <span data-katex="\varepsilon"></span> becomes a simplex.
+        This app builds it up to triangles (dimension 2), which is all that's
+        needed to see pieces and loops.
+    </p>
+
+    <h2>A movie of complexes: the filtration</h2>
+    <p>
+        As <span data-katex="\varepsilon"></span> grows, every complex
+        contains the previous one —
+    </p>
+    <div data-katex="\mathrm{VR}_{\varepsilon}(X) \;\subseteq\; \mathrm{VR}_{\varepsilon'}(X) \quad \text{for } \varepsilon \le \varepsilon'"
+         data-katex-display></div>
+    <p>
+        — so nothing already built is ever removed. This nested sequence is
+        the <strong>filtration</strong>. Features are born when a piece
+        splits off or a loop first closes, and die when they merge away or
+        get filled in; the barcode is just this movie, flattened onto one
+        axis.
+    </p>
+
+    <h2>Counting pieces and holes: homology</h2>
+    <p>
+        Homology makes "pieces" and "holes" precise. Working over
+        <span data-katex="\mathbb{Z}/2"></span> (so a chain is just a set of
+        simplices, and adding a simplex twice cancels it), the boundary of a
+        triangle is the sum of its three edges,
+    </p>
+    <div data-katex="\partial_2[abc] \;=\; [ab] + [bc] + [ac] \pmod 2" data-katex-display></div>
+    <p>
+        and homology in dimension <span data-katex="k"></span> is the cycles
+        that aren't themselves a boundary of anything one dimension up:
+    </p>
+    <div data-katex="H_k \;=\; \ker \partial_k \,/\, \operatorname{im} \partial_{k+1}" data-katex-display></div>
+    <p>
+        Its rank is the <strong>Betti number</strong> <span data-katex="\beta_k"></span>
+        — <span data-katex="\beta_0"></span> counts pieces, <span data-katex="\beta_1"></span>
+        counts loops, which is exactly what the "pieces" and "holes" readouts
+        on the simulator show at the current <span data-katex="\varepsilon"></span>.
+    </p>
+
+    <h2>A note on coefficients: why <span data-katex="\mathbb{Z}/2"></span>?</h2>
+    <p>
+        Homology can be computed with coefficients in any abelian group, not
+        just <span data-katex="\mathbb{Z}/2"></span> — the integers
+        <span data-katex="\mathbb{Z}"></span> or the reals
+        <span data-katex="\mathbb{R}"></span> work too, and the results are
+        related by the <strong>Universal Coefficient Theorem</strong>:
+    </p>
+    <div data-katex="H_k(X; G) \;\cong\; \big(H_k(X;\mathbb{Z}) \otimes G\big) \;\oplus\; \operatorname{Tor}\big(H_{k-1}(X;\mathbb{Z}), G\big)"
+         data-katex-display></div>
+    <p>
+        The first term is the "expected" rank; the <span data-katex="\operatorname{Tor}"></span>
+        term is a correction that only kicks in when the integral homology one
+        dimension down has <em>torsion</em> — a finite cyclic piece such as
+        <span data-katex="\mathbb{Z}/n"></span> rather than a free
+        <span data-katex="\mathbb{Z}"></span>. Real-valued coefficients
+        <span data-katex="\mathbb{R}"></span> kill all torsion outright
+        (<span data-katex="\operatorname{Tor}(\mathbb{Z}/n, \mathbb{R}) = 0"></span>
+        for every <span data-katex="n"></span>), so an <span data-katex="\mathbb{R}"></span>-computed
+        Betti number can only ever be <em>smaller</em> than or equal to a
+        <span data-katex="\mathbb{Z}/2"></span>-computed one. The textbook
+        example is the real projective plane: its integral
+        <span data-katex="H_1 = \mathbb{Z}/2"></span> is invisible to
+        <span data-katex="\mathbb{R}"></span> coefficients entirely, yet that
+        same torsion resurfaces one dimension up as an honest
+        <span data-katex="\mathbb{Z}/2"></span> class in
+        <span data-katex="H_2(X; \mathbb{Z}/2)"></span>. This app uses
+        <span data-katex="\mathbb{Z}/2"></span> for a purely practical reason:
+        every simplex's boundary is just "which faces", with no signs or
+        orientations to track, which is exactly what the reduction algorithm
+        below needs. For the pieces and loops these presets produce, that
+        choice essentially never changes the count — the caveat above is
+        about when, in principle, it could.
+    </p>
+
+    <h2>How to read the barcode</h2>
+    <p>
+        Every bar is one feature: a connected piece (H0) or a loop (H1). A bar
+        spans exactly the range of <span data-katex="\varepsilon"></span>
+        where that feature exists — it appears at its <em>birth</em> radius
+        and disappears at its <em>death</em> radius, where it merges into a
+        bigger piece or gets filled in by triangles.
+        <strong>Short bars are noise; long bars are real shape.</strong> The
+        vertical sweep line is "now" — wherever the ε slider currently sits.
+        Hover a bar to see exactly which piece or hole it is, traced directly
+        on the point cloud.
+    </p>
+
+    <h2>Births, deaths, and the pairing algorithm</h2>
+    <p>
+        Every bar comes from a linear-algebra fact: writing the boundary maps
+        as matrices, there's a way to reduce them,
+    </p>
+    <div data-katex="R \;=\; \partial\, V" data-katex-display></div>
+    <p>
+        so that each column of the reduced matrix <span data-katex="R"></span>
+        either vanishes (its simplex is a birth) or points back to exactly one
+        earlier simplex (its death partner) — that's the pairing algorithm
+        this app runs on every point-cloud edit. The cycle it highlights when
+        you hover a bar <em>is</em> that reduced column, read back as points
+        and edges.
+    </p>
+
+    <h2>Advanced: the persistence diagram and stability</h2>
+    <p>
+        The same births and deaths, plotted as points instead of bars, give
+        the <strong>persistence diagram</strong>: birth on one axis, death on
+        the other. A point's distance from the diagonal is its lifetime —
+        points hugging the diagonal are the short-lived noise bars; points
+        far above it are the long bars. This view earns its keep through a
+        stability guarantee: nudging the point cloud by at most
+        <span data-katex="\delta"></span> (in Hausdorff distance) moves every
+        point in the diagram by at most
+    </p>
+    <div data-katex="d_{\mathrm B}\big(\mathrm{Dgm}(X), \mathrm{Dgm}(Y)\big) \;\le\; 2\, d_{\mathrm H}(X, Y)" data-katex-display></div>
+    <p>
+        Try it: drag the noise slider on a noisy circle and watch the one
+        long bar barely move while the short ones jitter. That robustness —
+        small perturbations can only cause small changes to the diagram — is
+        the whole reason persistent homology is used on real, noisy data:
+        sensor readings, images, biological measurements, anywhere the "true"
+        shape is hidden under jitter.
+    </p>
+</section>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("renderKatex");
+    }
+}
