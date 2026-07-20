@@ -137,16 +137,20 @@
         and edges.
     </p>
 
-    <h2>Advanced: the persistence diagram and stability</h2>
+    <h2>The persistence diagram</h2>
     <p>
-        The same births and deaths, plotted as points instead of bars, give
-        the <strong>persistence diagram</strong>: birth on one axis, death on
+        Tick <strong>Persistence diagram</strong> to see the same births and
+        deaths plotted as points instead of bars: birth on one axis, death on
         the other. A point's distance from the diagonal is its lifetime —
-        points hugging the diagonal are the short-lived noise bars; points
-        far above it are the long bars. This view earns its keep through a
-        stability guarantee: nudging the point cloud by at most
-        <span data-katex="\delta"></span> (in Hausdorff distance) moves every
-        point in the diagram by at most
+        points hugging the diagonal are the short, noisy bars; points far
+        above it are the long, real ones.
+    </p>
+
+    <h2>Advanced: stability</h2>
+    <p>
+        This view earns its keep through a stability guarantee: nudging the
+        point cloud by at most <span data-katex="\delta"></span> (in
+        Hausdorff distance) moves every point in the diagram by at most
     </p>
     <div data-katex="d_{\mathrm B}\big(\mathrm{Dgm}(X), \mathrm{Dgm}(Y)\big) \;\le\; 2\, d_{\mathrm H}(X, Y)" data-katex-display></div>
     <p>

@@ -91,7 +91,7 @@
         <div class="control-group">
             <label class="check-label">
                 <input type="checkbox" checked="@Runner.ShowAdvancedView" @onchange="OnAdvancedViewChanged" />
-                advanced view: persistence diagram
+                Persistence diagram
             </label>
             <span class="control-hint">Same data, plotted as birth vs. death instead of bars.</span>
         </div>
@@ -168,6 +168,15 @@
         vertical sweep line is "now" — wherever the ε slider currently sits.
         Hover a bar to see exactly which piece or hole it is, traced directly
         on the point cloud.
+    </p>
+
+    <h2>The persistence diagram</h2>
+    <p>
+        Tick <strong>Persistence diagram</strong> to see the same births and
+        deaths plotted as points instead of bars: birth on one axis, death on
+        the other. A point's distance from the diagonal is its lifetime —
+        points hugging the diagonal are the short, noisy bars; points far
+        above it are the long, real ones.
     </p>
     <p class="control-hint">
         That's the short version. For the filtration in full, why this app

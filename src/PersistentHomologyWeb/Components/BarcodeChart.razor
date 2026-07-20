@@ -9,7 +9,7 @@
         @SvgText(Width - PadRight, TickLabelY, "chart-tick", "end", MaxEpsilon.ToString("F0"))
 
         <g class="barcode-h0">
-            @SvgText(PadLeft, _h0LabelY - 3, "barcode-group-label", "start", $"pieces (H0) — {H0Visible.Count} of {H0Total}")
+            @SvgText(PadLeft, _h0LabelY - 3, "barcode-group-label", "start", $"Pieces (H0) — {H0Visible.Count} of {H0Total}")
             @for (int i = 0; i < H0Visible.Count; i++)
             {
                 var pair = H0Visible[i];
@@ -19,7 +19,7 @@
         </g>
 
         <g class="barcode-h1">
-            @SvgText(PadLeft, _h1LabelY - 3, "barcode-group-label", "start", $"holes (H1) — {H1Visible.Count} of {H1Total}")
+            @SvgText(PadLeft, _h1LabelY - 3, "barcode-group-label", "start", $"Holes (H1) — {H1Visible.Count} of {H1Total}")
             @for (int i = 0; i < H1Visible.Count; i++)
             {
                 var pair = H1Visible[i];
