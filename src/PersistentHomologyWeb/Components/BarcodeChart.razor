@@ -1,0 +1,112 @@
+@* Primary, pedagogical view: one bar per feature, x-axis = epsilon. Long bars
+   are real shape, short bars are noise - the sweep line shows "now". *@
+
+<div class="chart-card">
+    <div class="chart-title">Barcode</div>
+    <svg viewBox="0 0 @Width @Height" preserveAspectRatio="none" class="chart-svg" role="img" aria-label="Persistence barcode">
+        <line x1="@PadLeft" x2="@(Width - PadRight)" y1="@(Height - PadBottom)" y2="@(Height - PadBottom)" class="chart-grid" />
+        @SvgText(PadLeft, TickLabelY, "chart-tick", "start", "ε = 0")
+        @SvgText(Width - PadRight, TickLabelY, "chart-tick", "end", MaxEpsilon.ToString("F0"))
+
+        <g class="barcode-h0">
+            @SvgText(PadLeft, _h0LabelY - 3, "barcode-group-label", "start", $"pieces (H0) — {H0Visible.Count} of {H0Total}")
+            @for (int i = 0; i < H0Visible.Count; i++)
+            {
+                var pair = H0Visible[i];
+                double y = RowY(_h0LabelY, i);
+                @RenderBar(pair, y)
+            }
+        </g>
+
+        <g class="barcode-h1">
+            @SvgText(PadLeft, _h1LabelY - 3, "barcode-group-label", "start", $"holes (H1) — {H1Visible.Count} of {H1Total}")
+            @for (int i = 0; i < H1Visible.Count; i++)
+            {
+                var pair = H1Visible[i];
+                double y = RowY(_h1LabelY, i);
+                @RenderBar(pair, y)
+            }
+        </g>
+
+        <line x1="@X(Epsilon)" x2="@X(Epsilon)" y1="@PadTop" y2="@(Height - PadBottom)" class="barcode-sweep" />
+    </svg>
+    <div class="chart-x-label">radius ε</div>
+</div>
+
+@code {
+    private const int Width = 560;
+    private const int PadLeft = 46;
+    private const int PadRight = 16;
+    private const int TickLabelY = 10;
+    private const int PadTop = 26;
+    private const int PadBottom = 10;
+    private const int RowHeight = 5;
+    private const int GroupGap = 16;
+    private const int MaxVisiblePerGroup = 15;
+
+    [Parameter, EditorRequired] public IReadOnlyList<PersistencePair> H0Pairs { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlyList<PersistencePair> H1Pairs { get; set; } = [];
+    [Parameter] public double Epsilon { get; set; }
+    [Parameter] public double MaxEpsilon { get; set; } = 260;
+    [Parameter] public PersistencePair? Hovered { get; set; }
+    [Parameter] public EventCallback<PersistencePair?> OnHover { get; set; }
+
+    private int Height { get; set; } = 160;
+    private double _h0LabelY;
+    private double _h1LabelY;
+
+    private List<PersistencePair> H0Visible { get; set; } = [];
+    private List<PersistencePair> H1Visible { get; set; } = [];
+    private int H0Total { get; set; }
+    private int H1Total { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var h0 = H0Pairs.Where(p => !p.IsZeroPersistence).ToList();
+        var h1 = H1Pairs.Where(p => !p.IsZeroPersistence).ToList();
+        H0Total = h0.Count;
+        H1Total = h1.Count;
+        H0Visible = h0.Take(MaxVisiblePerGroup).ToList();
+        H1Visible = h1.Take(MaxVisiblePerGroup).ToList();
+
+        _h0LabelY = PadTop;
+        double h0Rows = H0Visible.Count * RowHeight;
+        _h1LabelY = _h0LabelY + h0Rows + GroupGap;
+        double h1Rows = H1Visible.Count * RowHeight;
+
+        Height = (int)(_h1LabelY + h1Rows + PadBottom + 6);
+    }
+
+    private double X(double epsilon) =>
+        PadLeft + Math.Clamp(epsilon, 0, MaxEpsilon) / MaxEpsilon * (Width - PadLeft - PadRight);
+
+    private double RowY(double groupLabelY, int rowIndex) => groupLabelY + rowIndex * RowHeight + 3;
+
+    private RenderFragment RenderBar(PersistencePair pair, double y) => builder =>
+    {
+        double x0 = X(pair.Birth);
+        double x1 = pair.IsEssential ? Width - PadRight : X(pair.Death);
+        double barHeight = RowHeight - 2;
+        bool isHovered = Hovered == pair;
+
+        var barClass = isHovered ? "barcode-bar-hovered" : "";
+        var markup =
+            $"<rect x=\"{x0:0.#}\" y=\"{y:0.#}\" width=\"{Math.Max(1, x1 - x0):0.#}\" height=\"{barHeight}\" rx=\"1.5\" class=\"{barClass}\" />" +
+            $"<rect x=\"{x0:0.#}\" y=\"{(y - 1.5):0.#}\" width=\"{Math.Max(3, x1 - x0):0.#}\" height=\"{barHeight + 3}\" class=\"barcode-bar-hit\" />";
+        if (pair.IsEssential)
+        {
+            double tipY = y + barHeight / 2;
+            markup += $"<polygon points=\"{Width - PadRight},{tipY - 4:0.#} {Width - PadRight + 6},{tipY:0.#} {Width - PadRight},{tipY + 4:0.#}\" fill=\"currentColor\" />";
+        }
+
+        builder.OpenElement(0, "g");
+        builder.AddAttribute(1, "onmouseover", EventCallback.Factory.Create(this, () => OnHover.InvokeAsync(pair)));
+        builder.AddAttribute(2, "onmouseout", EventCallback.Factory.Create(this, () => OnHover.InvokeAsync(null)));
+        builder.AddContent(3, new MarkupString(markup));
+        builder.CloseElement();
+    };
+
+    // Razor reserves the <text> tag, so SVG text elements are emitted as markup.
+    private static MarkupString SvgText(double x, double y, string cssClass, string anchor, string content) =>
+        new($"<text x=\"{x:0.#}\" y=\"{y:0.#}\" class=\"{cssClass}\" text-anchor=\"{anchor}\">{content}</text>");
+}

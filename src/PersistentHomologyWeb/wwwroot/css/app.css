@@ -1,0 +1,551 @@
+:root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid-line: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --series-1: #2a78d6;
+    --series-2: #1baf7a;
+    --series-3: #eda100;
+    --series-8: #eb6834;
+    --accent: #2a78d6;
+    --accent-ink: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --surface-1: #1a1a19;
+        --page: #0d0d0d;
+        --text-primary: #ffffff;
+        --text-secondary: #c3c2b7;
+        --text-muted: #898781;
+        --grid-line: #2c2c2a;
+        --baseline: #383835;
+        --border: rgba(255, 255, 255, 0.10);
+        --series-1: #3987e5;
+        --series-2: #199e70;
+        --series-3: #c98500;
+        --series-8: #d95926;
+        --accent: #3987e5;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+}
+
+/* ---------- shell ---------- */
+
+.app-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.25rem 2rem;
+}
+
+.app-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+}
+
+.app-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 650;
+    font-size: 1.05rem;
+}
+
+.app-byline {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.82rem;
+    margin-left: 0.4rem;
+    text-decoration: none;
+}
+
+.app-byline:hover {
+    text-decoration: underline;
+    color: var(--text-secondary);
+}
+
+.app-mark {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 35% 35%, var(--series-1) 0 20%, transparent 21%),
+        radial-gradient(circle at 65% 35%, var(--series-2) 0 20%, transparent 21%),
+        radial-gradient(circle at 50% 65%, var(--series-3) 0 20%, transparent 21%);
+    border: 1px solid var(--border);
+}
+
+.app-nav {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.app-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.35rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.92rem;
+}
+
+.app-nav a:hover {
+    background: var(--grid-line);
+}
+
+.app-nav a.active {
+    color: var(--text-primary);
+    background: var(--grid-line);
+    font-weight: 600;
+}
+
+.app-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.app-footer a {
+    color: var(--text-secondary);
+}
+
+.page-title {
+    font-size: 1.35rem;
+    margin: 0 0 0.4rem;
+}
+
+.page-title:focus {
+    outline: none;
+}
+
+.page-intro {
+    color: var(--text-secondary);
+    max-width: 62rem;
+    margin-top: 0;
+}
+
+/* ---------- simulator layout ---------- */
+
+.sim-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(240px, 320px);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .sim-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.lattice-panel {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem;
+}
+
+.canvas-stack {
+    position: relative;
+    line-height: 0;
+}
+
+.panel-caption {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.ph-canvas {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1px solid var(--grid-line);
+    border-radius: 6px;
+    background: var(--surface-1);
+    display: block;
+    cursor: crosshair;
+}
+
+.ph-canvas-layer {
+    position: absolute;
+    inset: 0;
+    border-color: transparent;
+    background: transparent;
+    pointer-events: none;
+}
+
+.readout-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin-top: 0.75rem;
+}
+
+.readout {
+    display: flex;
+    flex-direction: column;
+}
+
+.readout-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.readout-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- controls ---------- */
+
+.controls {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.control-buttons {
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.control-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.control-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.inline-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    font: inherit;
+    font-size: 0.9rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+    background: var(--grid-line);
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    min-width: 5.5rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+    background: var(--accent);
+}
+
+.btn-active {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+}
+
+.check-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+}
+
+select,
+input[type="number"] {
+    font: inherit;
+    font-size: 0.88rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-primary);
+}
+
+/* ---------- charts (barcode + persistence diagram) ---------- */
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+.chart-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem;
+}
+
+.chart-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+/* Keep typeset chart titles and inline prose maths at the size of the text
+   around them, rather than KaTeX's default 1.21em enlargement. */
+.chart-title .katex,
+.page-intro .katex,
+.explainer p .katex,
+.explainer li .katex {
+    font-size: 1em;
+}
+
+.chart-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.chart-grid {
+    stroke: var(--grid-line);
+    stroke-width: 1;
+}
+
+.chart-tick {
+    fill: var(--text-muted);
+    font-size: 10px;
+}
+
+.chart-empty {
+    fill: var(--text-muted);
+    font-size: 12px;
+}
+
+.chart-x-label {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 0.3rem;
+}
+
+.barcode-h0 rect {
+    fill: var(--series-1);
+}
+
+.barcode-h1 rect {
+    fill: var(--series-3);
+}
+
+.barcode-bar-hit {
+    fill: transparent;
+    cursor: pointer;
+}
+
+.barcode-bar-hovered {
+    stroke: var(--series-8);
+    stroke-width: 2;
+}
+
+.barcode-sweep {
+    stroke: var(--accent);
+    stroke-width: 1.5;
+}
+
+.barcode-group-label {
+    fill: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.diagram-diagonal {
+    stroke: var(--baseline);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+}
+
+.diagram-essential-line {
+    stroke: var(--text-muted);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+}
+
+.diagram-dot {
+    stroke: var(--surface-1);
+    stroke-width: 1.5;
+}
+
+.diagram-dot-hovered {
+    stroke: var(--series-8);
+    stroke-width: 2.5;
+}
+
+/* ---------- explainer ---------- */
+
+.explainer {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.4rem;
+    margin-top: 1.25rem;
+    max-width: 62rem;
+}
+
+.explainer h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.6rem;
+}
+
+.explainer h2:not(:first-child) {
+    margin-top: 1.5rem;
+}
+
+.explainer-list {
+    color: var(--text-secondary);
+    margin: 0.6rem 0;
+    padding-left: 1.2rem;
+}
+
+.explainer-list li {
+    margin: 0.5rem 0;
+}
+
+.explainer-list strong {
+    color: var(--text-primary);
+}
+
+.explainer p {
+    color: var(--text-secondary);
+    margin: 0.6rem 0;
+}
+
+.explainer strong {
+    color: var(--text-primary);
+}
+
+.explainer [data-katex-display] {
+    margin: 0.9rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.3rem 0;
+}
+
+.explainer .katex-display {
+    margin: 0;
+}
+
+/* ---------- loading & error UI ---------- */
+
+.app-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    color: var(--text-secondary);
+}
+
+.app-loading-grid {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background:
+        linear-gradient(45deg,
+            var(--text-primary) 0 25%, var(--grid-line) 25% 50%,
+            var(--text-primary) 50% 75%, var(--grid-line) 75%);
+    animation: pulse 1.2s ease-in-out infinite alternate;
+    margin-bottom: 1rem;
+}
+
+@keyframes pulse {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
+}
+
+.loading-progress-text {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.loading-progress-text::after {
+    content: var(--blazor-load-percentage-text, "");
+}
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    color: #0b0b0b;
+    bottom: 0;
+    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

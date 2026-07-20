@@ -1,0 +1,541 @@
+@page "/"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject HomologyRunner Runner
+@inject NavigationManager Navigation
+@using System.Diagnostics
+@using PersistentHomologyWeb.Interop
+
+<h1 class="page-title">Persistent homology visualisation</h1>
+<p class="page-intro">
+    Grow a radius around every point in a cloud, watch pieces merge and holes
+    appear, and read the shape's topology straight off the barcode below.
+</p>
+
+<div class="sim-layout">
+    <section class="lattice-panel">
+        <p class="panel-caption">Point cloud — click to add a point, right-click to remove one.</p>
+        <div class="canvas-stack" @onclick="OnCanvasClick" @oncontextmenu="OnCanvasRightClick" @oncontextmenu:preventDefault="true">
+            <canvas id="ph-complex" class="ph-canvas"></canvas>
+            <canvas id="ph-points" class="ph-canvas ph-canvas-layer"></canvas>
+            <canvas id="ph-highlight" class="ph-canvas ph-canvas-layer"></canvas>
+        </div>
+        <div class="readout-row">
+            <div class="readout">
+                <span class="readout-label">pieces</span>
+                <span class="readout-value">@(Runner.Result?.Components(Runner.Epsilon) ?? 0)</span>
+            </div>
+            <div class="readout">
+                <span class="readout-label">holes</span>
+                <span class="readout-value">@(Runner.Result?.Holes(Runner.Epsilon) ?? 0)</span>
+            </div>
+            <div class="readout">
+                <span class="readout-label">points</span>
+                <span class="readout-value">@Runner.Points.Count</span>
+            </div>
+        </div>
+        @if (Runner.Result?.Filtration.Truncated == true)
+        {
+            <p class="control-hint">
+                Complex truncated at ε = @Runner.Result.Filtration.TriangleCutoff.ToString("F0") to stay interactive.
+            </p>
+        }
+    </section>
+
+    <aside class="controls">
+        <div class="control-group">
+            <label class="control-label" for="epsilon-slider">ε (radius) — @Runner.Epsilon.ToString("F0")</label>
+            <input id="epsilon-slider" type="range" min="0" max="@HomologyRunner.MaxEpsilon" step="1"
+                   value="@Runner.Epsilon" @oninput="OnEpsilonInput" />
+            <div class="inline-controls">
+                <button class="btn @(Runner.IsPlaying ? "btn-active" : "")" @onclick="TogglePlay">
+                    @(Runner.IsPlaying ? "Pause" : "Play")
+                </button>
+                <label class="check-label">
+                    <input type="checkbox" checked="@Runner.ShowBalls" @onchange="OnShowBallsChanged" />
+                    show balls
+                </label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="control-label">Preset</span>
+            <select value="@_selectedPreset" @onchange="OnPresetChanged">
+                @foreach (var kind in Enum.GetValues<PresetKind>())
+                {
+                    <option value="@kind">@FormatPresetName(kind)</option>
+                }
+            </select>
+            <label class="control-label" for="count-slider">points — @_pointCount</label>
+            <input id="count-slider" type="range" min="10" max="@MaxSliderPoints" step="5"
+                   value="@_pointCount" @oninput="OnCountInput" @onchange="OnCountChanged" />
+            <label class="control-label" for="noise-slider">noise — @Runner.PresetNoise.ToString("F2")</label>
+            <input id="noise-slider" type="range" min="0" max="1" step="0.05"
+                   value="@Runner.PresetNoise" @oninput="OnNoiseInput" @onchange="OnNoiseChanged" />
+            <div class="inline-controls">
+                <button class="btn" @onclick="Reshuffle">Reshuffle</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <span class="control-label">Editing</span>
+            <label class="check-label">
+                <input type="checkbox" checked="@Runner.RemoveMode" @onchange="OnRemoveModeChanged" />
+                remove mode (or right-click)
+            </label>
+            <div class="inline-controls">
+                <button class="btn" @onclick="ClearAll">Clear</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="check-label">
+                <input type="checkbox" checked="@Runner.ShowAdvancedView" @onchange="OnAdvancedViewChanged" />
+                advanced view: persistence diagram
+            </label>
+            <span class="control-hint">Same data, plotted as birth vs. death instead of bars.</span>
+        </div>
+    </aside>
+</div>
+
+<div class="charts-grid">
+    <BarcodeChart H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
+                  Epsilon="Runner.Epsilon" MaxEpsilon="HomologyRunner.MaxEpsilon"
+                  Hovered="Runner.HoveredPair" OnHover="OnBarHover" />
+    @if (Runner.ShowAdvancedView)
+    {
+        <PersistenceDiagram H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
+                             MaxEpsilon="HomologyRunner.MaxEpsilon"
+                             Hovered="Runner.HoveredPair" OnHover="OnBarHover" />
+    }
+</div>
+
+<section class="explainer">
+    <h2>What is this?</h2>
+    <p>
+        Sample some points off a shape — say, a wobbly circle. Around every
+        point, grow a disc of radius <span data-katex="\varepsilon/2"></span>.
+        For small <span data-katex="\varepsilon"></span> the discs are tiny
+        and disjoint: just confetti. Make <span data-katex="\varepsilon"></span>
+        huge and everything overlaps into one blob. Somewhere in between, the
+        discs merge into a ring with an empty middle — the circle's hole is
+        unmistakable. <strong>Persistent homology is the bookkeeping of that
+        movie</strong>: which pieces and holes exist at which radius, and how
+        long each one survives.
+    </p>
+
+    <h2>How to read the barcode</h2>
+    <p>
+        Every bar is one feature: a connected piece (H0) or a loop (H1). A bar
+        spans exactly the range of <span data-katex="\varepsilon"></span>
+        where that feature exists — it appears at its <em>birth</em> radius
+        and disappears at its <em>death</em> radius, where it merges into a
+        bigger piece or gets filled in by triangles.
+        <strong>Short bars are noise; long bars are real shape.</strong> The
+        vertical sweep line is "now" — wherever the ε slider currently sits.
+        Hover a bar to see exactly which piece or hole it is, traced directly
+        on the point cloud.
+    </p>
+
+    <h2>Growing balls: the Vietoris–Rips complex</h2>
+    <p>
+        At radius <span data-katex="\varepsilon"></span>, connect two points
+        with an edge whenever their discs touch, and fill in a triangle
+        whenever three points are all mutually close. Formally, this is the
+        <strong>Vietoris–Rips complex</strong>:
+    </p>
+    <div data-katex="\mathrm{VR}_\varepsilon(X) \;=\; \{\,\sigma \subseteq X \;:\; \operatorname{diam}(\sigma) \le \varepsilon\,\}"
+         data-katex-display></div>
+    <p>
+        every subset of points whose diameter — its largest pairwise distance
+        — is at most <span data-katex="\varepsilon"></span> becomes a simplex.
+        This app builds it up to triangles (dimension 2), which is all that's
+        needed to see pieces and loops.
+    </p>
+
+    <h2>A movie of complexes: the filtration</h2>
+    <p>
+        As <span data-katex="\varepsilon"></span> grows, every complex
+        contains the previous one —
+    </p>
+    <div data-katex="\mathrm{VR}_{\varepsilon}(X) \;\subseteq\; \mathrm{VR}_{\varepsilon'}(X) \quad \text{for } \varepsilon \le \varepsilon'"
+         data-katex-display></div>
+    <p>
+        — so nothing already built is ever removed. This nested sequence is
+        the <strong>filtration</strong>. Features are born when a piece
+        splits off or a loop first closes, and die when they merge away or
+        get filled in; the barcode is just this movie, flattened onto one
+        axis.
+    </p>
+
+    <h2>Counting pieces and holes: homology</h2>
+    <p>
+        Homology makes "pieces" and "holes" precise. Working over
+        <span data-katex="\mathbb{Z}/2"></span> (so a chain is just a set of
+        simplices, and adding a simplex twice cancels it), the boundary of a
+        triangle is the sum of its three edges,
+    </p>
+    <div data-katex="\partial_2[abc] \;=\; [ab] + [bc] + [ac] \pmod 2" data-katex-display></div>
+    <p>
+        and homology in dimension <span data-katex="k"></span> is the cycles
+        that aren't themselves a boundary of anything one dimension up:
+    </p>
+    <div data-katex="H_k \;=\; \ker \partial_k \,/\, \operatorname{im} \partial_{k+1}" data-katex-display></div>
+    <p>
+        Its rank is the <strong>Betti number</strong> <span data-katex="\beta_k"></span>
+        — <span data-katex="\beta_0"></span> counts pieces, <span data-katex="\beta_1"></span>
+        counts loops, which is exactly what the "pieces" and "holes" readouts
+        above show at the current <span data-katex="\varepsilon"></span>.
+    </p>
+
+    <h2>A note on coefficients: why <span data-katex="\mathbb{Z}/2"></span>?</h2>
+    <p>
+        Homology can be computed with coefficients in any abelian group, not
+        just <span data-katex="\mathbb{Z}/2"></span> — the integers
+        <span data-katex="\mathbb{Z}"></span> or the reals
+        <span data-katex="\mathbb{R}"></span> work too, and the results are
+        related by the <strong>Universal Coefficient Theorem</strong>:
+    </p>
+    <div data-katex="H_k(X; G) \;\cong\; \big(H_k(X;\mathbb{Z}) \otimes G\big) \;\oplus\; \operatorname{Tor}\big(H_{k-1}(X;\mathbb{Z}), G\big)"
+         data-katex-display></div>
+    <p>
+        The first term is the "expected" rank; the <span data-katex="\operatorname{Tor}"></span>
+        term is a correction that only kicks in when the integral homology one
+        dimension down has <em>torsion</em> — a finite cyclic piece such as
+        <span data-katex="\mathbb{Z}/n"></span> rather than a free
+        <span data-katex="\mathbb{Z}"></span>. Real-valued coefficients
+        <span data-katex="\mathbb{R}"></span> kill all torsion outright
+        (<span data-katex="\operatorname{Tor}(\mathbb{Z}/n, \mathbb{R}) = 0"></span>
+        for every <span data-katex="n"></span>), so an <span data-katex="\mathbb{R}"></span>-computed
+        Betti number can only ever be <em>smaller</em> than or equal to a
+        <span data-katex="\mathbb{Z}/2"></span>-computed one. The textbook
+        example is the real projective plane: its integral
+        <span data-katex="H_1 = \mathbb{Z}/2"></span> is invisible to
+        <span data-katex="\mathbb{R}"></span> coefficients entirely, yet that
+        same torsion resurfaces one dimension up as an honest
+        <span data-katex="\mathbb{Z}/2"></span> class in
+        <span data-katex="H_2(X; \mathbb{Z}/2)"></span>. This app uses
+        <span data-katex="\mathbb{Z}/2"></span> for a purely practical reason:
+        every simplex's boundary is just "which faces", with no signs or
+        orientations to track, which is exactly what the reduction algorithm
+        below needs. For the pieces and loops these presets produce, that
+        choice essentially never changes the count — the caveat above is
+        about when, in principle, it could.
+    </p>
+
+    <h2>Births, deaths, and the pairing algorithm</h2>
+    <p>
+        Every bar comes from a linear-algebra fact: writing the boundary maps
+        as matrices, there's a way to reduce them,
+    </p>
+    <div data-katex="R \;=\; \partial\, V" data-katex-display></div>
+    <p>
+        so that each column of the reduced matrix <span data-katex="R"></span>
+        either vanishes (its simplex is a birth) or points back to exactly one
+        earlier simplex (its death partner) — that's the pairing algorithm
+        this app runs on every point-cloud edit. The cycle it highlights when
+        you hover a bar <em>is</em> that reduced column, read back as points
+        and edges.
+    </p>
+
+    <h2>Advanced: the persistence diagram and stability</h2>
+    <p>
+        The same births and deaths, plotted as points instead of bars, give
+        the <strong>persistence diagram</strong>: birth on one axis, death on
+        the other. A point's distance from the diagonal is its lifetime —
+        points hugging the diagonal are the short-lived noise bars; points
+        far above it are the long bars. This view earns its keep through a
+        stability guarantee: nudging the point cloud by at most
+        <span data-katex="\delta"></span> (in Hausdorff distance) moves every
+        point in the diagram by at most
+    </p>
+    <div data-katex="d_{\mathrm B}\big(\mathrm{Dgm}(X), \mathrm{Dgm}(Y)\big) \;\le\; 2\, d_{\mathrm H}(X, Y)" data-katex-display></div>
+    <p>
+        Try it: drag the noise slider on a noisy circle and watch the one
+        long bar barely move while the short ones jitter. That robustness —
+        small perturbations can only cause small changes to the diagram — is
+        the whole reason persistent homology is used on real, noisy data:
+        sensor readings, images, biological measurements, anywhere the "true"
+        shape is hidden under jitter.
+    </p>
+</section>
+
+@code {
+    private const string ComplexCanvasId = "ph-complex";
+    private const string PointsCanvasId = "ph-points";
+    private const string HighlightCanvasId = "ph-highlight";
+    private const double PlayDurationSeconds = 8;
+
+    // UI-only cap: keeps the interactive point-cloud editing responsive.
+    // PresetGenerator itself still allows up to PresetGenerator.MaxPoints.
+    private const int MaxSliderPoints = 100;
+
+    private PresetKind _selectedPreset = PresetKind.NoisyCircle;
+    private int _pointCount = 60;
+    private bool _moduleReady;
+
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<Simulator>? _selfReference;
+    private readonly Stopwatch _frameClock = new();
+    private readonly Stopwatch _uiRefresh = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await CanvasInterop.EnsureModuleLoadedAsync();
+        _moduleReady = true;
+
+        CanvasInterop.InitCanvas(ComplexCanvasId, HomologyRunner.CanvasSize, HomologyRunner.CanvasSize);
+        CanvasInterop.InitCanvas(PointsCanvasId, HomologyRunner.CanvasSize, HomologyRunner.CanvasSize);
+        CanvasInterop.InitCanvas(HighlightCanvasId, HomologyRunner.CanvasSize, HomologyRunner.CanvasSize);
+
+        // ?preset=figureeight and ?autoplay preset the controls (deep links, demos).
+        var query = ParseQuery(Navigation.Uri);
+        if (query.TryGetValue("preset", out var presetValue) &&
+            Enum.TryParse<PresetKind>(presetValue, ignoreCase: true, out var deepLinkPreset))
+        {
+            _selectedPreset = deepLinkPreset;
+        }
+
+        Runner.LoadPreset(_selectedPreset, _pointCount);
+
+        if (query.ContainsKey("autoplay"))
+        {
+            Runner.IsPlaying = true;
+        }
+
+        RedrawAll();
+        await JS.InvokeVoidAsync("renderKatex");
+
+        // Loaded a second time via IJSRuntime (module is an ES-module singleton
+        // per URL, so this shares state with the JSHost.ImportAsync import
+        // above) - needed because startLoop takes a DotNetObjectReference,
+        // which is marshalled through the standard JSInterop path, not [JSImport].
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/phCanvas.js");
+        _selfReference = DotNetObjectReference.Create(this);
+        _frameClock.Start();
+        _uiRefresh.Start();
+        await _module.InvokeVoidAsync("startLoop", _selfReference);
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnAnimationFrame()
+    {
+        double dt = _frameClock.Elapsed.TotalSeconds;
+        _frameClock.Restart();
+
+        if (!Runner.IsPlaying) return;
+
+        double next = Runner.Epsilon + dt * HomologyRunner.MaxEpsilon / PlayDurationSeconds;
+        if (next >= HomologyRunner.MaxEpsilon)
+        {
+            next = HomologyRunner.MaxEpsilon;
+            Runner.IsPlaying = false;
+        }
+        Runner.Epsilon = next;
+        RedrawComplex();
+
+        if (_uiRefresh.Elapsed.TotalMilliseconds > 150 || !Runner.IsPlaying)
+        {
+            _uiRefresh.Restart();
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePlay()
+    {
+        Runner.IsPlaying = !Runner.IsPlaying;
+        if (Runner.IsPlaying)
+        {
+            if (Runner.Epsilon >= HomologyRunner.MaxEpsilon) Runner.Epsilon = 0;
+            _frameClock.Restart();
+        }
+    }
+
+    private void OnBarHover(PersistencePair? pair)
+    {
+        Runner.HoveredPair = pair;
+        if (!_moduleReady) return;
+
+        if (pair is null)
+        {
+            CanvasInterop.ClearCanvas(HighlightCanvasId);
+        }
+        else
+        {
+            CanvasInterop.DrawHighlight(HighlightCanvasId, Runner.PointXy, pair.RepresentativeVertices, pair.RepresentativeEdgePairs);
+        }
+    }
+
+    private void OnAdvancedViewChanged(ChangeEventArgs e)
+    {
+        Runner.ShowAdvancedView = e.Value is bool show && show;
+    }
+
+    private void RedrawComplex()
+    {
+        if (!_moduleReady || Runner.Result is null) return;
+        var filtration = Runner.Result.Filtration;
+        int edgeCount = filtration.CountEdgesUpTo(Runner.Epsilon);
+        int triangleCount = filtration.CountTrianglesUpTo(Runner.Epsilon);
+        CanvasInterop.DrawComplex(
+            ComplexCanvasId,
+            Runner.PointXy,
+            filtration.EdgePairs,
+            edgeCount,
+            filtration.TriangleTriples,
+            triangleCount,
+            Runner.Epsilon,
+            Runner.ShowBalls);
+    }
+
+    private void RedrawPoints()
+    {
+        if (!_moduleReady) return;
+        CanvasInterop.DrawPoints(PointsCanvasId, Runner.PointXy);
+    }
+
+    private void RedrawAll()
+    {
+        RedrawComplex();
+        RedrawPoints();
+        if (_moduleReady) CanvasInterop.ClearCanvas(HighlightCanvasId);
+    }
+
+    private void OnEpsilonInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out double value))
+        {
+            Runner.Epsilon = value;
+            RedrawComplex();
+        }
+    }
+
+    private void OnShowBallsChanged(ChangeEventArgs e)
+    {
+        Runner.ShowBalls = e.Value is bool show && show;
+        RedrawComplex();
+    }
+
+    // Regenerating the cloud and recomputing persistence is too expensive to
+    // run on every "input" tick while the slider is being dragged, so the
+    // live label updates on input but the regenerate+recompute only fires
+    // once on "change" (release) - see OnCountChanged/OnNoiseChanged.
+    private void OnCountInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int count)) _pointCount = count;
+    }
+
+    private void OnCountChanged(ChangeEventArgs e)
+    {
+        Runner.LoadPreset(_selectedPreset, _pointCount);
+        RedrawAll();
+    }
+
+    private void OnNoiseInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out double noise)) Runner.PresetNoise = noise;
+    }
+
+    private void OnNoiseChanged(ChangeEventArgs e)
+    {
+        Runner.LoadPreset(_selectedPreset, _pointCount);
+        RedrawAll();
+    }
+
+    private void OnPresetChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<PresetKind>(e.Value?.ToString(), out var kind))
+        {
+            _selectedPreset = kind;
+            Runner.LoadPreset(_selectedPreset, _pointCount);
+            RedrawAll();
+        }
+    }
+
+    private void Reshuffle()
+    {
+        Runner.Reseed();
+        RedrawAll();
+    }
+
+    private void OnRemoveModeChanged(ChangeEventArgs e)
+    {
+        Runner.RemoveMode = e.Value is bool remove && remove;
+    }
+
+    private void ClearAll()
+    {
+        Runner.Clear();
+        RedrawAll();
+    }
+
+    private void OnCanvasClick(MouseEventArgs e)
+    {
+        if (!_moduleReady) return;
+        var point = ToLogicalPoint(e);
+        if (Runner.RemoveMode) Runner.RemoveNearest(point);
+        else Runner.AddPoint(point);
+        RedrawAll();
+    }
+
+    private void OnCanvasRightClick(MouseEventArgs e)
+    {
+        if (!_moduleReady) return;
+        Runner.RemoveNearest(ToLogicalPoint(e));
+        RedrawAll();
+    }
+
+    private Point2D ToLogicalPoint(MouseEventArgs e)
+    {
+        double clientSize = CanvasInterop.GetClientSize(ComplexCanvasId);
+        double scale = clientSize > 0 ? HomologyRunner.CanvasSize / clientSize : 1;
+        return new Point2D(e.OffsetX * scale, e.OffsetY * scale);
+    }
+
+    private static Dictionary<string, string> ParseQuery(string uri)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        string query = new Uri(uri).Query;
+        if (query.Length <= 1) return result;
+
+        foreach (string pair in query[1..].Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int eq = pair.IndexOf('=');
+            string key = eq < 0 ? pair : pair[..eq];
+            string value = eq < 0 ? "" : Uri.UnescapeDataString(pair[(eq + 1)..]);
+            result[Uri.UnescapeDataString(key)] = value;
+        }
+        return result;
+    }
+
+    private static string FormatPresetName(PresetKind kind) => kind switch
+    {
+        PresetKind.NoisyCircle => "Noisy circle",
+        PresetKind.TwoCircles => "Two circles",
+        PresetKind.FigureEight => "Figure eight",
+        PresetKind.Annulus => "Annulus",
+        PresetKind.RandomClusters => "Random clusters",
+        PresetKind.Spiral => "Spiral",
+        _ => kind.ToString()
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("stopLoop");
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _selfReference?.Dispose();
+    }
+}

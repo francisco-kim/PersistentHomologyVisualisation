@@ -1,0 +1,69 @@
+@* Advanced view: birth/death scatter. Distance from the diagonal = how long
+   a feature persisted; essential features sit on the dashed "never dies" line. *@
+
+<div class="chart-card">
+    <div class="chart-title">Persistence diagram</div>
+    <svg viewBox="0 0 @Size @Size" preserveAspectRatio="none" class="chart-svg" role="img" aria-label="Persistence diagram">
+        <line x1="@PadLeft" x2="@(Size - PadRight)" y1="@(Size - PadBottom)" y2="@(Size - PadBottom)" class="chart-grid" />
+        <line x1="@PadLeft" x2="@PadLeft" y1="@PadTop" y2="@(Size - PadBottom)" class="chart-grid" />
+        <line x1="@PadLeft" y1="@(Size - PadBottom)" x2="@(Size - PadRight)" y2="@PadTop" class="diagram-diagonal" />
+        <line x1="@PadLeft" x2="@(Size - PadRight)" y1="@EssentialY" y2="@EssentialY" class="diagram-essential-line" />
+        @SvgText(PadLeft - 6, EssentialY + 3, "chart-tick", "end", "∞")
+        @SvgText(PadLeft, Size - PadBottom + 12, "chart-tick", "start", "birth")
+        @SvgText(PadLeft - 6, PadTop, "chart-tick", "end", "death")
+
+        @foreach (var pair in H0Pairs.Where(p => !p.IsZeroPersistence))
+        {
+            @RenderDot(pair, "var(--series-1)")
+        }
+        @foreach (var pair in H1Pairs.Where(p => !p.IsZeroPersistence))
+        {
+            @RenderDot(pair, "var(--series-3)")
+        }
+    </svg>
+    <div class="chart-x-label">distance from the diagonal = how long the feature lasted</div>
+</div>
+
+@code {
+    private const int Size = 320;
+    private const int PadLeft = 40;
+    private const int PadRight = 14;
+    private const int PadTop = 16;
+    private const int PadBottom = 24;
+
+    [Parameter, EditorRequired] public IReadOnlyList<PersistencePair> H0Pairs { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlyList<PersistencePair> H1Pairs { get; set; } = [];
+    [Parameter] public double MaxEpsilon { get; set; } = 260;
+    [Parameter] public PersistencePair? Hovered { get; set; }
+    [Parameter] public EventCallback<PersistencePair?> OnHover { get; set; }
+
+    private double EssentialY => PadTop + 6;
+
+    private double PlotX(double birth) => PadLeft + Math.Clamp(birth, 0, MaxEpsilon) / MaxEpsilon * (Size - PadLeft - PadRight);
+
+    private double PlotY(double death) => double.IsPositiveInfinity(death)
+        ? EssentialY
+        : (Size - PadBottom) - Math.Clamp(death, 0, MaxEpsilon) / MaxEpsilon * (Size - PadBottom - PadTop);
+
+    private RenderFragment RenderDot(PersistencePair pair, string fill) => builder =>
+    {
+        double x = PlotX(pair.Birth);
+        double y = PlotY(pair.Death);
+        bool isHovered = Hovered == pair;
+        string dotClass = isHovered ? "diagram-dot diagram-dot-hovered" : "diagram-dot";
+        double r = isHovered ? 5.5 : 4;
+
+        var markup =
+            $"<circle cx=\"{x:0.#}\" cy=\"{y:0.#}\" r=\"{r}\" fill=\"{fill}\" class=\"{dotClass}\" />" +
+            $"<circle cx=\"{x:0.#}\" cy=\"{y:0.#}\" r=\"9\" fill=\"transparent\" />";
+
+        builder.OpenElement(0, "g");
+        builder.AddAttribute(1, "onmouseover", EventCallback.Factory.Create(this, () => OnHover.InvokeAsync(pair)));
+        builder.AddAttribute(2, "onmouseout", EventCallback.Factory.Create(this, () => OnHover.InvokeAsync(null)));
+        builder.AddContent(3, new MarkupString(markup));
+        builder.CloseElement();
+    };
+
+    private static MarkupString SvgText(double x, double y, string cssClass, string anchor, string content) =>
+        new($"<text x=\"{x:0.#}\" y=\"{y:0.#}\" class=\"{cssClass}\" text-anchor=\"{anchor}\">{content}</text>");
+}

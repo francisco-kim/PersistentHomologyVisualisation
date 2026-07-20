@@ -1,0 +1,26 @@
+@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <header class="app-header">
+        <div class="app-title">
+            <span class="app-mark"></span>
+            <span>Persistent homology</span>
+            <a class="app-byline" href="https://francisco-kim.github.io"
+               target="_blank" rel="noopener">by Francisco Kim</a>
+        </div>
+        <nav class="app-nav">
+            <NavLink href="" Match="NavLinkMatch.All">Simulator</NavLink>
+        </nav>
+    </header>
+
+    <main class="app-main">
+        @Body
+    </main>
+
+    <footer class="app-footer">
+        Growing balls around points until pieces merge and holes appear —
+        real topological data analysis running entirely in your browser
+        (.NET WebAssembly).
+        <a href="https://github.com/francisco-kim/PersistentHomologyVisualisation" target="_blank" rel="noopener">Source</a>
+    </footer>
+</div>

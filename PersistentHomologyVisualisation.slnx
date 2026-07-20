@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PersistentHomologyCore/PersistentHomologyCore.csproj" />
+    <Project Path="src/PersistentHomologyWeb/PersistentHomologyWeb.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PersistentHomologyCore.Tests/PersistentHomologyCore.Tests.csproj" />
+  </Folder>
+</Solution>
