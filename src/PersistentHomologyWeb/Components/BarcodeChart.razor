@@ -4,7 +4,7 @@
 @using PersistentHomologyWeb.Interop
 
 <div class="chart-card">
-    <div class="chart-title">Barcode</div>
+    <div class="chart-title">Barcode <span class="chart-title-hint">— hover a bar to highlight it on the plot</span></div>
     <svg id="@SvgId" viewBox="0 0 @Width @Height" preserveAspectRatio="none" class="chart-svg barcode-scrubbable" role="img" aria-label="Persistence barcode, and epsilon scrubber"
          @onmousedown="OnScrubDown" @onmousemove="OnScrubMove" @onmouseup="OnScrubEnd" @onmouseleave="OnScrubEnd">
         <line x1="@PadLeft" x2="@(Width - PadRight)" y1="@(Height - PadBottom)" y2="@(Height - PadBottom)" class="chart-grid" />
@@ -44,7 +44,7 @@
     private const int TickLabelY = 10;
     private const int PadTop = 26;
     private const int PadBottom = 10;
-    private const int RowHeight = 5;
+    private const int RowHeight = 6;
     private const int GroupGap = 16;
     private const int MaxVisiblePerGroup = 15;
 
@@ -121,7 +121,7 @@
     {
         double x0 = X(pair.Birth);
         double x1 = pair.IsEssential ? Width - PadRight : X(pair.Death);
-        double barHeight = RowHeight - 2;
+        double barHeight = RowHeight - 3;
         bool isHovered = Hovered == pair;
 
         var barClass = isHovered ? "barcode-bar-hovered" : "";

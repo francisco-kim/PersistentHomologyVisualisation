@@ -352,6 +352,11 @@ input[type="number"] {
     margin-bottom: 0.5rem;
 }
 
+.chart-title-hint {
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
 /* Keep typeset chart titles and inline prose maths at the size of the text
    around them, rather than KaTeX's default 1.21em enlargement. */
 .chart-title .katex,
@@ -393,11 +398,11 @@ input[type="number"] {
     margin-top: 0.3rem;
 }
 
-.barcode-h0 rect {
+.barcode-h0 rect:not(.barcode-bar-hit) {
     fill: var(--series-1);
 }
 
-.barcode-h1 rect {
+.barcode-h1 rect:not(.barcode-bar-hit) {
     fill: var(--series-3);
 }
 
