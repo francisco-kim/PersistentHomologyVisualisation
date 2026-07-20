@@ -30,6 +30,7 @@ public static class PresetGenerator
             PresetKind.NoisyCircle => NoisyCircle(count, noise, radius, cx, cy, random),
             PresetKind.TwoCircles => TwoCircles(count, noise, radius, cx, cy, random),
             PresetKind.ThreeCircles => ThreeCircles(count, noise, radius, cx, cy, random),
+            PresetKind.CircleSquareLine => CircleSquareLine(count, noise, radius, cx, cy, random),
             PresetKind.FigureEight => FigureEight(count, noise, radius, cx, cy, random),
             PresetKind.Annulus => Annulus(count, noise, radius, cx, cy, random),
             PresetKind.RandomClusters => RandomClusters(count, noise, width, height, random),
@@ -95,6 +96,75 @@ public static class PresetGenerator
             }
         }
         return points;
+    }
+
+    /// <summary>
+    /// One loop shaped as a circle, one loop shaped as a square, and one open
+    /// line - a visual reminder that H1 sees a loop's topology, not its shape:
+    /// the circle and square both register as a hole, the line doesn't.
+    /// </summary>
+    private static List<Point2D> CircleSquareLine(int count, double noise, double radius, double cx, double cy, Random random)
+    {
+        var points = new List<Point2D>(count);
+        double shapeRadius = radius * 0.35;
+        double arrangementRadius = radius * 0.75;
+        double jitter = noise * shapeRadius * 0.25;
+        int per = count / 3;
+
+        for (int c = 0; c < 3; c++)
+        {
+            int localCount = c < 2 ? per : count - 2 * per;
+            double centerAngle = -Math.PI / 2 + c * 2 * Math.PI / 3;
+            double centerX = cx + arrangementRadius * Math.Cos(centerAngle);
+            double centerY = cy + arrangementRadius * Math.Sin(centerAngle);
+
+            switch (c)
+            {
+                case 0:
+                    for (int i = 0; i < localCount; i++)
+                    {
+                        double angle = 2 * Math.PI * i / localCount;
+                        double r = shapeRadius + jitter * NextGaussian(random);
+                        points.Add(new Point2D(centerX + r * Math.Cos(angle), centerY + r * Math.Sin(angle)));
+                    }
+                    break;
+                case 1:
+                    double perimeter = shapeRadius * 8;
+                    for (int i = 0; i < localCount; i++)
+                    {
+                        var (px, py) = SquarePerimeterPoint(perimeter * i / localCount, shapeRadius);
+                        points.Add(new Point2D(
+                            centerX + px + jitter * NextGaussian(random),
+                            centerY + py + jitter * NextGaussian(random)));
+                    }
+                    break;
+                default:
+                    for (int i = 0; i < localCount; i++)
+                    {
+                        double t = localCount <= 1 ? 0.5 : (double)i / (localCount - 1);
+                        double x = (t - 0.5) * 2 * shapeRadius;
+                        points.Add(new Point2D(
+                            centerX + x + jitter * NextGaussian(random),
+                            centerY + jitter * NextGaussian(random)));
+                    }
+                    break;
+            }
+        }
+        return points;
+    }
+
+    /// <summary>Walks a square's perimeter clockwise from its bottom-left corner.</summary>
+    private static (double X, double Y) SquarePerimeterPoint(double distance, double halfSide)
+    {
+        double side = 2 * halfSide;
+        double d = distance % (4 * side);
+        if (d < side) return (-halfSide + d, -halfSide);
+        d -= side;
+        if (d < side) return (halfSide, -halfSide + d);
+        d -= side;
+        if (d < side) return (halfSide - d, halfSide);
+        d -= side;
+        return (-halfSide, halfSide - d);
     }
 
     private static List<Point2D> FigureEight(int count, double noise, double radius, double cx, double cy, Random random)
