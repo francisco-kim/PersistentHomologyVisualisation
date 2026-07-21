@@ -23,7 +23,7 @@ public static class PresetGenerator
         var random = new Random(seed);
         double cx = width / 2;
         double cy = height / 2;
-        double radius = Math.Min(width, height) * 0.35;
+        double radius = Math.Min(width, height) * 0.40;
 
         return kind switch
         {
@@ -77,7 +77,7 @@ public static class PresetGenerator
     {
         var points = new List<Point2D>(count);
         double smallRadius = radius * 0.35;
-        double arrangementRadius = radius * 0.55;
+        double arrangementRadius = radius * 0.75;
         double jitter = noise * smallRadius * 0.25;
         int per = count / 3;
 
@@ -86,7 +86,11 @@ public static class PresetGenerator
             int localCount = c < 2 ? per : count - 2 * per;
             double centerAngle = -Math.PI / 2 + c * 2 * Math.PI / 3;
             double centerX = cx + arrangementRadius * Math.Cos(centerAngle);
-            double centerY = cy + arrangementRadius * Math.Sin(centerAngle);
+            // The apex cluster sits fully above cy while the two base clusters sit
+            // only half as far below it, so a bare sin() offset leaves the trio
+            // biased toward the top of the canvas. Nudge the whole arrangement
+            // down by a quarter of arrangementRadius to balance the min/max Y.
+            double centerY = cy + arrangementRadius * (Math.Sin(centerAngle) + 0.25);
 
             for (int i = 0; i < localCount; i++)
             {
@@ -116,7 +120,9 @@ public static class PresetGenerator
             int localCount = c < 2 ? per : count - 2 * per;
             double centerAngle = -Math.PI / 2 + c * 2 * Math.PI / 3;
             double centerX = cx + arrangementRadius * Math.Cos(centerAngle);
-            double centerY = cy + arrangementRadius * Math.Sin(centerAngle);
+            // See the matching comment in ThreeCircles: balance the apex-up,
+            // base-down triangle so it doesn't sit biased toward the top.
+            double centerY = cy + arrangementRadius * (Math.Sin(centerAngle) + 0.25);
 
             switch (c)
             {

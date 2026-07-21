@@ -67,7 +67,7 @@ public class PresetGeneratorTests
         var points = PresetGenerator.Generate(PresetKind.NoisyCircle, count: 30, noise: 0, seed: 1, width: width, height: height);
 
         double cx = width / 2, cy = height / 2;
-        double expectedRadius = Math.Min(width, height) * 0.35;
+        double expectedRadius = Math.Min(width, height) * 0.40;
 
         Assert.All(points, p =>
         {

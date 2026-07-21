@@ -152,16 +152,27 @@ html, body {
 
 .sim-layout {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) minmax(240px, 320px);
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 400px);
     gap: 1.25rem;
-    align-items: start;
-    max-width: 62rem;
+    align-items: stretch;
+    max-width: 78rem;
 }
 
 @media (max-width: 900px) {
     .sim-layout {
         grid-template-columns: 1fr;
     }
+
+    .lattice-panel {
+        position: static;
+        max-width: none;
+    }
+}
+
+.sim-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
 }
 
 .lattice-panel {
@@ -169,6 +180,12 @@ html, body {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 0.9rem;
+    position: sticky;
+    top: 1rem;
+    /* Opt out of the grid row's stretch: this panel should always be its
+       own natural height and free to stick while scrolling, even when the
+       persistence diagram makes the controls column taller than it. */
+    align-self: start;
 }
 
 .canvas-stack {
@@ -184,7 +201,7 @@ html, body {
 
 .ph-canvas {
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 640 / 420;
     border: 1px solid var(--grid-line);
     border-radius: 6px;
     background: var(--surface-1);
@@ -233,6 +250,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 1.1rem;
+    flex-grow: 1;
 }
 
 .control-group {
@@ -334,6 +352,9 @@ input[type="number"] {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     gap: 1.25rem;
+}
+
+.charts-grid-full {
     margin-top: 1.25rem;
     max-width: 62rem;
 }

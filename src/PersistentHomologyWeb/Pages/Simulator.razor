@@ -42,72 +42,77 @@
         }
     </section>
 
-    <aside class="controls">
-        <div class="control-group">
-            <label class="control-label" for="epsilon-slider">ε (radius) — @Runner.Epsilon.ToString("F0")</label>
-            <input id="epsilon-slider" type="range" min="0" max="@HomologyRunner.MaxEpsilon" step="1"
-                   value="@Runner.Epsilon" @oninput="OnEpsilonInput" />
-            <div class="inline-controls">
-                <button class="btn @(Runner.IsPlaying ? "btn-active" : "")" @onclick="TogglePlay">
-                    @(Runner.IsPlaying ? "Pause" : "Play")
-                </button>
+    <div class="sim-side">
+        <aside class="controls">
+            <div class="control-group">
+                <label class="control-label" for="epsilon-slider">ε (radius) — @Runner.Epsilon.ToString("F0")</label>
+                <input id="epsilon-slider" type="range" min="0" max="@HomologyRunner.MaxEpsilon" step="1"
+                       value="@Runner.Epsilon" @oninput="OnEpsilonInput" />
+                <div class="inline-controls">
+                    <button class="btn @(Runner.IsPlaying ? "btn-active" : "")" @onclick="TogglePlay">
+                        @(Runner.IsPlaying ? "Pause" : "Play")
+                    </button>
+                    <label class="check-label">
+                        <input type="checkbox" checked="@Runner.ShowBalls" @onchange="OnShowBallsChanged" />
+                        show balls
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Preset</span>
+                <select value="@_selectedPreset" @onchange="OnPresetChanged">
+                    @foreach (var kind in Enum.GetValues<PresetKind>())
+                    {
+                        <option value="@kind">@FormatPresetName(kind)</option>
+                    }
+                </select>
+                <label class="control-label" for="count-slider">points — @_pointCount</label>
+                <input id="count-slider" type="range" min="10" max="@MaxSliderPoints" step="5"
+                       value="@_pointCount" @oninput="OnCountInput" @onchange="OnCountChanged" />
+                <label class="control-label" for="noise-slider">noise — @Runner.PresetNoise.ToString("F2")</label>
+                <input id="noise-slider" type="range" min="0" max="1" step="0.05"
+                       value="@Runner.PresetNoise" @oninput="OnNoiseInput" @onchange="OnNoiseChanged" />
+                <div class="inline-controls">
+                    <button class="btn" @onclick="Reshuffle">Reshuffle</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Editing</span>
                 <label class="check-label">
-                    <input type="checkbox" checked="@Runner.ShowBalls" @onchange="OnShowBallsChanged" />
-                    show balls
+                    <input type="checkbox" checked="@Runner.RemoveMode" @onchange="OnRemoveModeChanged" />
+                    remove mode (or right-click)
                 </label>
+                <div class="inline-controls">
+                    <button class="btn" @onclick="ClearAll">Clear</button>
+                </div>
             </div>
-        </div>
 
-        <div class="control-group">
-            <span class="control-label">Preset</span>
-            <select value="@_selectedPreset" @onchange="OnPresetChanged">
-                @foreach (var kind in Enum.GetValues<PresetKind>())
-                {
-                    <option value="@kind">@FormatPresetName(kind)</option>
-                }
-            </select>
-            <label class="control-label" for="count-slider">points — @_pointCount</label>
-            <input id="count-slider" type="range" min="10" max="@MaxSliderPoints" step="5"
-                   value="@_pointCount" @oninput="OnCountInput" @onchange="OnCountChanged" />
-            <label class="control-label" for="noise-slider">noise — @Runner.PresetNoise.ToString("F2")</label>
-            <input id="noise-slider" type="range" min="0" max="1" step="0.05"
-                   value="@Runner.PresetNoise" @oninput="OnNoiseInput" @onchange="OnNoiseChanged" />
-            <div class="inline-controls">
-                <button class="btn" @onclick="Reshuffle">Reshuffle</button>
+            <div class="control-group">
+                <label class="check-label">
+                    <input type="checkbox" checked="@Runner.ShowAdvancedView" @onchange="OnAdvancedViewChanged" />
+                    Persistence diagram
+                </label>
+                <span class="control-hint">Same data, plotted as birth vs. death instead of bars.</span>
             </div>
-        </div>
+        </aside>
 
-        <div class="control-group">
-            <span class="control-label">Editing</span>
-            <label class="check-label">
-                <input type="checkbox" checked="@Runner.RemoveMode" @onchange="OnRemoveModeChanged" />
-                remove mode (or right-click)
-            </label>
-            <div class="inline-controls">
-                <button class="btn" @onclick="ClearAll">Clear</button>
+        @if (Runner.ShowAdvancedView)
+        {
+            <div class="charts-grid">
+                <PersistenceDiagram H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
+                                     MaxEpsilon="HomologyRunner.MaxEpsilon"
+                                     Hovered="Runner.HoveredPair" OnHover="OnBarHover" />
             </div>
-        </div>
-
-        <div class="control-group">
-            <label class="check-label">
-                <input type="checkbox" checked="@Runner.ShowAdvancedView" @onchange="OnAdvancedViewChanged" />
-                Persistence diagram
-            </label>
-            <span class="control-hint">Same data, plotted as birth vs. death instead of bars.</span>
-        </div>
-    </aside>
+        }
+    </div>
 </div>
 
-<div class="charts-grid">
+<div class="charts-grid charts-grid-full">
     <BarcodeChart H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
                   Epsilon="Runner.Epsilon" MaxEpsilon="HomologyRunner.MaxEpsilon"
                   Hovered="Runner.HoveredPair" OnHover="OnBarHover" OnEpsilonChange="OnBarcodeEpsilonChange" />
-    @if (Runner.ShowAdvancedView)
-    {
-        <PersistenceDiagram H0Pairs="@(Runner.Result?.H0 ?? [])" H1Pairs="@(Runner.Result?.H1 ?? [])"
-                             MaxEpsilon="HomologyRunner.MaxEpsilon"
-                             Hovered="Runner.HoveredPair" OnHover="OnBarHover" />
-    }
 </div>
 
 <section class="explainer">
@@ -205,7 +210,7 @@
 
     // UI-only cap: keeps the interactive point-cloud editing responsive.
     // PresetGenerator itself still allows up to PresetGenerator.MaxPoints.
-    private const int MaxSliderPoints = 100;
+    private const int MaxSliderPoints = 120;
     private const int DefaultPointCount = 60;
 
     private PresetKind _selectedPreset = PresetKind.NoisyCircle;
@@ -224,9 +229,9 @@
         await CanvasInterop.EnsureModuleLoadedAsync();
         _moduleReady = true;
 
-        CanvasInterop.InitCanvas(ComplexCanvasId, HomologyRunner.CanvasSize, HomologyRunner.CanvasSize);
-        CanvasInterop.InitCanvas(PointsCanvasId, HomologyRunner.CanvasSize, HomologyRunner.CanvasSize);
-        CanvasInterop.InitCanvas(HighlightCanvasId, HomologyRunner.CanvasSize, HomologyRunner.CanvasSize);
+        CanvasInterop.InitCanvas(ComplexCanvasId, HomologyRunner.CanvasWidth, HomologyRunner.CanvasHeight);
+        CanvasInterop.InitCanvas(PointsCanvasId, HomologyRunner.CanvasWidth, HomologyRunner.CanvasHeight);
+        CanvasInterop.InitCanvas(HighlightCanvasId, HomologyRunner.CanvasWidth, HomologyRunner.CanvasHeight);
 
         // ?preset=figureeight and ?autoplay preset the controls (deep links, demos).
         var query = ParseQuery(Navigation.Uri);
@@ -440,7 +445,7 @@
     private Point2D ToLogicalPoint(MouseEventArgs e)
     {
         double clientSize = CanvasInterop.GetClientSize(ComplexCanvasId);
-        double scale = clientSize > 0 ? HomologyRunner.CanvasSize / clientSize : 1;
+        double scale = clientSize > 0 ? HomologyRunner.CanvasWidth / clientSize : 1;
         return new Point2D(e.OffsetX * scale, e.OffsetY * scale);
     }
 

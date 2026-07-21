@@ -10,8 +10,9 @@ namespace PersistentHomologyWeb.Services;
 /// </summary>
 public sealed class HomologyRunner
 {
-    public const int CanvasSize = 640;
-    public const double MaxEpsilon = 260;
+    public const int CanvasWidth = 640;
+    public const int CanvasHeight = 420;
+    public const double MaxEpsilon = 200;
 
     private readonly List<Point2D> _points = [];
     private PresetKind _currentPreset = PresetKind.NoisyCircle;
@@ -66,7 +67,7 @@ public sealed class HomologyRunner
         _currentCount = count;
         Seed = _seedSource.Next();
         _points.Clear();
-        _points.AddRange(PresetGenerator.Generate(kind, count, PresetNoise, Seed, CanvasSize, CanvasSize));
+        _points.AddRange(PresetGenerator.Generate(kind, count, PresetNoise, Seed, CanvasWidth, CanvasHeight));
         Recompute();
     }
 
@@ -74,7 +75,7 @@ public sealed class HomologyRunner
     {
         Seed = _seedSource.Next();
         _points.Clear();
-        _points.AddRange(PresetGenerator.Generate(_currentPreset, _currentCount, PresetNoise, Seed, CanvasSize, CanvasSize));
+        _points.AddRange(PresetGenerator.Generate(_currentPreset, _currentCount, PresetNoise, Seed, CanvasWidth, CanvasHeight));
         Recompute();
     }
 

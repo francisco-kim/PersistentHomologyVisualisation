@@ -76,7 +76,7 @@ public class PersistenceReductionTests
     public void Regular20Gon_DominantH1BirthIsExactChordLength()
     {
         var points = PresetGenerator.Generate(PresetKind.NoisyCircle, count: 20, noise: 0, seed: 1);
-        double radius = Math.Min(640, 640) * 0.35;
+        double radius = Math.Min(640, 640) * 0.40;
         double expectedBirth = 2 * radius * Math.Sin(Math.PI / 20);
 
         var result = PersistenceEngine.Compute(points, maxEpsilon: 500);
