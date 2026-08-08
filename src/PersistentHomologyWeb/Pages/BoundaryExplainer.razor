@@ -179,13 +179,13 @@
     <div data-katex="(\delta^k f)(\sigma) \;=\; f(\partial_{k+1}\sigma)" data-katex-display></div>
     <p>
         which, written out in matrices, says precisely
-        <span data-katex="\delta^k = \partial_{k+1}^{\mathsf T}"></span>. Ticking
+        <span data-katex="\delta^k = \partial_{k+1}^{\top}"></span>. Ticking
         <strong>transpose</strong> in the tab shows exactly these. For the
         tetrahedron:
     </p>
     <div class="matrix-figure-row">
         <figure class="matrix-figure">
-            <figcaption data-katex="\delta^0 = \partial_1^{\mathsf T} \;\; (6 \times 4)"></figcaption>
+            <figcaption data-katex="\delta^0 = \partial_1^{\top} \;\; (6 \times 4)"></figcaption>
             <pre><code>       [0] [1] [2] [3]
 [01]   −1  +1   ·   ·
 [02]   −1   ·  +1   ·
@@ -195,7 +195,7 @@
 [23]    ·   ·  −1  +1</code></pre>
         </figure>
         <figure class="matrix-figure">
-            <figcaption data-katex="\delta^1 = \partial_2^{\mathsf T} \;\; (4 \times 6)"></figcaption>
+            <figcaption data-katex="\delta^1 = \partial_2^{\top} \;\; (4 \times 6)"></figcaption>
             <pre><code>        01  02  03  12  13  23
 [012]   +1  −1   ·  +1   ·   ·
 [013]   +1   ·  −1   ·  +1   ·
@@ -213,7 +213,7 @@
         <span data-katex="+1"></span> at <span data-katex="[0\,1\,3]"></span> —
         the two triangles that edge is a face <em>of</em>. Same numbers, read the
         other way: a column of <span data-katex="\partial"></span> lists faces, a
-        column of <span data-katex="\partial^{\mathsf T}"></span> lists cofaces.
+        column of <span data-katex="\partial^{\top}"></span> lists cofaces.
         That is the entire content of the transpose toggle, and it is what the
         highlight switches between.
     </p>
@@ -262,7 +262,7 @@
         Since <span data-katex="\delta \circ \delta = 0"></span> too, the
         coboundary maps form their own complex running the other way, with
         <span data-katex="H^k = \ker\delta^k / \operatorname{im}\delta^{k-1}"></span>.
-        Over a field, <span data-katex="\operatorname{rank} M = \operatorname{rank} M^{\mathsf T}"></span>,
+        Over a field, <span data-katex="\operatorname{rank} M = \operatorname{rank} M^{\top}"></span>,
         so the kernel and image dimensions match up and
         <span data-katex="H^k \cong H_k"></span>. The Betti numbers are
         identical — which is why the tab's Betti readout does <em>not</em> move

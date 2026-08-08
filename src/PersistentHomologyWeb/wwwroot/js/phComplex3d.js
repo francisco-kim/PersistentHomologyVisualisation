@@ -96,11 +96,6 @@ export function initCanvas(id, width, height) {
   }
 }
 
-export function getClientSize(id) {
-  const canvas = document.getElementById(id);
-  return canvas ? canvas.clientWidth : 0;
-}
-
 export function setComplex(id, vertexXyzView, edgePairsView, triTriplesView, tetQuadsView, solid) {
   const scene = scenes.get(id);
   if (!scene) {
@@ -181,6 +176,8 @@ function project(scene) {
 
 // --- rendering ---
 
+// Larger is nearer the camera: project() divides by (CAMERA_DISTANCE - depth),
+// so a bigger depth spreads a vertex further from the centre.
 function triangleDepth(points, a, b, c) {
   return (points[a].depth + points[b].depth + points[c].depth) / 3;
 }
@@ -226,22 +223,18 @@ function render(scene) {
   const relatedColour = cssVar('--series-1', '#2a78d6');
   const surfaceColour = cssVar('--surface-1', '#ffffff');
 
-  // Triangles back to front, so the near faces of a solid actually look near.
-  const triCount = scene.tris.length / 3;
-  const order = [];
-  for (let t = 0; t < triCount; t++) {
-    order.push(t);
-  }
-  order.sort((p, q) =>
-    triangleDepth(points, scene.tris[3 * q], scene.tris[3 * q + 1], scene.tris[3 * q + 2]) -
-    triangleDepth(points, scene.tris[3 * p], scene.tris[3 * p + 1], scene.tris[3 * p + 2]));
-
+  // Drawn in index order, deliberately not depth-sorted. Every face is the same
+  // colour at the same alpha, and source-over compositing of equal colours is
+  // order-independent: a painter's-algorithm sort would cost a sort per frame
+  // and produce the identical image. Depth still matters for picking, where the
+  // frontmost face has to win - see pick().
+  //
   // A filled tetrahedron adds no faces of its own, so nothing above would
   // distinguish it from its own hollow surface - the opacity bump and the
   // barycentre marker below are the only cues that the 3-simplex is present.
   ctx.fillStyle = faceColour;
   ctx.globalAlpha = scene.solid ? 0.3 : 0.16;
-  for (const t of order) {
+  for (let t = 0; t < scene.tris.length / 3; t++) {
     fillTriangle(ctx, points, scene.tris[3 * t], scene.tris[3 * t + 1], scene.tris[3 * t + 2]);
   }
   ctx.globalAlpha = 1;
@@ -434,7 +427,7 @@ function pick(scene, px, py, pointerBoost) {
     if (!pointInTriangle(px, py, a, b, c)) {
       continue;
     }
-    const depth = (a.depth + b.depth + c.depth) / 3;
+    const depth = triangleDepth(points, scene.tris[3 * t], scene.tris[3 * t + 1], scene.tris[3 * t + 2]);
     if (depth > frontDepth) {
       frontDepth = depth;
       best = { dimension: 2, index: t };
@@ -519,26 +512,37 @@ export function attachPicker(id, dotNetRef) {
 
 export function detachPicker(id) {
   const scene = scenes.get(id);
-  const canvas = document.getElementById(id);
-  if (!scene || !scene.handlers) {
+  if (!scene) {
     return;
   }
-  if (canvas) {
-    canvas.removeEventListener('pointerdown', scene.handlers.onPointerDown);
-    canvas.removeEventListener('pointermove', scene.handlers.onPointerMove);
-    canvas.removeEventListener('pointerup', scene.handlers.onPointerUp);
-    canvas.removeEventListener('pointercancel', scene.handlers.onPointerUp);
-  }
-  scene.handlers = null;
-  scene.dotNetRef = null;
+
+  // The observer is torn down whether or not a picker was ever attached: it is
+  // created by initCanvas, not by attachPicker, so bailing out early on a
+  // missing handler set would leak it for the lifetime of the page.
   scene.observer?.disconnect();
   scene.observer = null;
+
+  if (scene.handlers) {
+    const canvas = document.getElementById(id);
+    if (canvas) {
+      canvas.removeEventListener('pointerdown', scene.handlers.onPointerDown);
+      canvas.removeEventListener('pointermove', scene.handlers.onPointerMove);
+      canvas.removeEventListener('pointerup', scene.handlers.onPointerUp);
+      canvas.removeEventListener('pointercancel', scene.handlers.onPointerUp);
+    }
+    scene.handlers = null;
+    scene.dotNetRef = null;
+  }
 }
 
-// Re-renders every live scene, e.g. after a colour-scheme change, since all
-// colours are read from CSS custom properties at draw time.
+// Re-renders every live scene. Every colour is read from a CSS custom property
+// at draw time, so the last frame stays in the old palette until something
+// redraws - and nothing otherwise would: the scene only redraws on rotation, on
+// resize, or on a push from C#.
 export function refresh() {
   for (const scene of scenes.values()) {
     render(scene);
   }
 }
+
+window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', refresh);

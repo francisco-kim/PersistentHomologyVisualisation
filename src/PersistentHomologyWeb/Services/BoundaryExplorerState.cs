@@ -34,10 +34,24 @@ public sealed class BoundaryExplorerState
         set { if (_fillLevel != value) { _fillLevel = value; Recompute(); } }
     }
 
+    /// <summary>
+    /// Integer or Z/2 entries. Unlike the preset and the fill level this leaves
+    /// the complex alone - the simplices and their indices mean exactly what
+    /// they meant - so the selection survives. That matters: ticking Z/2 with a
+    /// tetrahedron selected is how you see what the signs were doing, and
+    /// dropping the selection would take the comparison away at the moment it
+    /// was asked for.
+    /// </summary>
     public Coefficients Coefficients
     {
         get => _coefficients;
-        set { if (_coefficients != value) { _coefficients = value; Recompute(); } }
+        set
+        {
+            if (_coefficients == value) return;
+            _coefficients = value;
+            RecomputeMatrices();
+            RecomputeRelated();
+        }
     }
 
     private bool _transposed;
@@ -65,9 +79,8 @@ public sealed class BoundaryExplorerState
     private int[][,] _boundaries = [];
 
     /// <summary>
-    /// Highest degree with a matrix worth showing. Always one past the fill
-    /// level, so the empty d_(k+1) that kills the top-dimensional cycles is
-    /// visible rather than merely implied.
+    /// Top dimension the complex can hold at the current fill level - so also
+    /// the highest degree whose boundary matrix has any columns at all.
     /// </summary>
     public int TopDegree => (int)_fillLevel;
 
@@ -147,13 +160,8 @@ public sealed class BoundaryExplorerState
         var preset = BoundaryPresets.Build(_preset);
         Complex = preset.Complex.Restrict((int)_fillLevel);
         Coordinates = preset.Coordinates;
-        Homology = SimplicialHomology.Compute(Complex, _coefficients);
 
-        _boundaries = new int[TopDegree + 2][,];
-        for (int k = 0; k <= TopDegree + 1; k++)
-        {
-            _boundaries[k] = BoundaryMatrixBuilder.Build(Complex, k, _coefficients);
-        }
+        RecomputeMatrices();
 
         VertexXyz = Flatten(Coordinates);
         EdgePairs = FlattenIndices(Complex.ByDimension(1), 2);
@@ -163,6 +171,22 @@ public sealed class BoundaryExplorerState
         // A selection cannot survive a change of complex: the indices mean
         // something different afterwards.
         ClearSelection();
+    }
+
+    /// <summary>
+    /// Everything that depends on the entries rather than on which simplices
+    /// exist: the matrices themselves and the ranks read off them. Split out so
+    /// a change of coefficients need not disturb the complex or the selection.
+    /// </summary>
+    private void RecomputeMatrices()
+    {
+        Homology = SimplicialHomology.Compute(Complex, _coefficients);
+
+        _boundaries = new int[TopDegree + 2][,];
+        for (int k = 0; k <= TopDegree + 1; k++)
+        {
+            _boundaries[k] = BoundaryMatrixBuilder.Build(Complex, k, _coefficients);
+        }
     }
 
     /// <summary>

@@ -40,9 +40,9 @@ $\mathbb{Z}$ with signs rather than over $\mathbb{Z}/2$.
   simplex it stands for. Selecting a column highlights that simplex together
   with the faces listed down its column.
 - **Transpose** the matrices to get the coboundary operators
-  $\delta^k = \partial_{k+1}^{\mathsf T}$. The same click then highlights
+  $\delta^k = \partial_{k+1}^{\top}$. The same click then highlights
   *cofaces* instead of faces: a column of $\partial$ lists what a simplex is
-  bounded by, a column of $\partial^{\mathsf T}$ lists what it is a face of.
+  bounded by, a column of $\partial^{\top}$ lists what it is a face of.
 - **Fill level** (frame / surface / solid) adds triangles and then tetrahedra
   without moving a point, so the Betti numbers change purely by columns
   appearing in $\partial_2$ and $\partial_3$ — one column in $\partial_3$
@@ -51,9 +51,9 @@ $\mathbb{Z}$ with signs rather than over $\mathbb{Z}/2$.
   $\partial(\partial\sigma) = 0$ term by term with the cancelling pairs
   colour-matched.
 
-The rendering is hand-rolled canvas 2D — projection, painter's-algorithm face
-sorting and drag rotation — so the tab adds no dependency. Its explanation
-lives at
+The rendering is hand-rolled canvas 2D — weak-perspective projection, depth-
+ordered picking and drag rotation — so the tab adds no dependency. Its
+explanation lives at
 [`/boundary/explainer`](https://francisco-kim.github.io/PersistentHomologyVisualisation/boundary/explainer):
 chains and orientation, the alternating-sign formula, why $\partial_0$ is
 empty, $\partial \circ \partial = 0$, Betti numbers as ranks, and the
@@ -187,6 +187,7 @@ src/PersistentHomologyWeb/    Blazor WebAssembly app (canvas rendering via
                                zero-copy [JSImport] MemoryView interop)
 tests/PersistentHomologyCore.Tests  xUnit tests with known-answer persistence
                                computations (e.g. unit square -> H1 = [1, sqrt(2)])
+docs/                         design notes (see docs/boundary-tab.md)
 ```
 
 ## Getting started

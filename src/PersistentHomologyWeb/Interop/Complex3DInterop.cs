@@ -50,9 +50,9 @@ public static partial class Complex3DInterop
         int relatedDimension,
         [JSMarshalAs<JSType.MemoryView>] Span<int> relatedIndices);
 
-    /// <summary>CSS pixel width of the canvas element, for scaling pointer coordinates.</summary>
-    [JSImport("getClientSize", ModuleName)]
-    public static partial double GetClientSize(string canvasId);
+    // No getClientSize counterpart here, unlike CanvasInterop: this module sizes
+    // its own backing store from the element and hit-tests in CSS pixels, so C#
+    // never needs the canvas's measured width.
 
     // attachPicker/detachPicker take a DotNetObjectReference, which is
     // marshalled through the standard Microsoft.JSInterop IJSRuntime path

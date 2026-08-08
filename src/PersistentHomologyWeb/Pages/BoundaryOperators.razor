@@ -144,7 +144,7 @@
                 </div>
                 <div class="betti-summary">
                     <span class="betti-summary-value">β = (@BettiList())</span>
-                    <span class="betti-summary-note">pieces, loops, cavities</span>
+                    <span class="betti-summary-note">@BettiNote()</span>
                 </div>
             </div>
 
@@ -158,6 +158,7 @@
                                 Columns="State.DisplayedColumns(0)"
                                 Degree="0"
                                 Transposed="State.Transposed"
+                                Coefficients="State.Coefficients"
                                 Compact="true" />
             </div>
         </aside>
@@ -173,6 +174,7 @@
                         Columns="State.DisplayedColumns(k)"
                         Degree="k"
                         Transposed="State.Transposed"
+                        Coefficients="State.Coefficients"
                         Selection="State.Selection"
                         RelatedDimension="State.RelatedDimension"
                         RelatedIndices="State.RelatedIndices"
@@ -186,23 +188,35 @@
         <h2>Why <span data-katex="\partial \circ \partial = 0"></span>, on this simplex</h2>
         <p>
             Take the boundary of <strong>@expansion.Simplex.Label</strong>, then take
-            the boundary of that. Every face below turns up exactly twice with
-            opposite signs — matching colours mark the pairs — so all
-            @(expansion.PairCount * 2) terms annihilate.
+            the boundary of that. Every face below turns up exactly twice —
+            matching colours mark the pairs — so all @(expansion.PairCount * 2)
+            terms
+            @if (Mod2)
+            {
+                <text>
+                    fall in @(expansion.PairCount) pairs, and over
+                    <span data-katex="\mathbb{Z}/2"></span> a face counted twice is
+                    a face counted zero times.
+                </text>
+            }
+            else
+            {
+                <text>annihilate: the two copies carry opposite signs.</text>
+            }
         </p>
         <div class="expansion">
             @foreach (var row in expansion.Rows)
             {
                 <div class="expansion-row">
                     <span class="expansion-face">
-                        @(row.Sign > 0 ? "+" : "−") ∂@(row.Face.Label)
+                        @Sign(row.Sign) ∂@(row.Face.Label)
                     </span>
                     <span class="expansion-equals">=</span>
                     <span class="expansion-terms">
                         @foreach (var term in row.Terms)
                         {
                             <span class="expansion-term pair-@(term.CancellingPair % 6)">
-                                @(term.Sign > 0 ? "+" : "−")@term.Simplex.Label
+                                @Sign(term.Sign)@term.Simplex.Label
                             </span>
                         }
                     </span>
@@ -215,9 +229,23 @@
             </div>
         </div>
         <p class="control-hint">
-            Tick <strong>collapse signs</strong> and the identity still holds, but
-            the mechanism vanishes: without signs there is nothing to see
-            cancelling, only pairs adding to an even number.
+            @if (Mod2)
+            {
+                <text>
+                    The identity still holds here, but its mechanism has gone:
+                    with no signs there is nothing to watch cancel, only pairs
+                    adding to an even number. Untick <strong>collapse signs</strong>
+                    to get it back.
+                </text>
+            }
+            else
+            {
+                <text>
+                    Tick <strong>collapse signs</strong> and the identity still
+                    holds, but the mechanism vanishes: without signs there is
+                    nothing to see cancelling, only pairs adding to an even number.
+                </text>
+            }
         </p>
     </section>
 }
@@ -345,7 +373,10 @@ else
     private void OnCoefficientsChanged(ChangeEventArgs e)
     {
         State.Coefficients = e.Value is bool mod2 && mod2 ? Coefficients.Mod2 : Coefficients.Integer;
-        PushComplex();
+
+        // Only the highlight, not the whole complex: the coefficients change the
+        // matrix entries, never the geometry.
+        PushHighlight();
         _needsKatex = true;
     }
 
@@ -373,7 +404,28 @@ else
             State.RelatedIndices);
     }
 
+    private bool Mod2 => State.Coefficients == Coefficients.Mod2;
+
+    // Over Z/2 the coefficient is 1, not +1: writing a sign there would imply a
+    // choice of orientation that the field does not have. The terms are still a
+    // formal sum, so they are still joined by "+".
+    private string Sign(int sign) => Mod2 ? "+" : sign > 0 ? "+" : "−";
+
     private string BettiList() => string.Join(", ", State.Homology.Select(info => info.Betti));
+
+    // Named per entry rather than as a fixed "pieces, loops, cavities": the
+    // number of Betti numbers follows the fill level (two at frame, four at
+    // solid), and a caption listing three names beside two or four numbers
+    // invites the reader to line them up wrongly.
+    // Above dimension 2 there is no everyday word for what beta counts, so the
+    // symbol stands in rather than a coined one.
+    private string BettiNote() => string.Join(", ", State.Homology.Select(info => info.Dimension switch
+    {
+        0 => "pieces",
+        1 => "loops",
+        2 => "cavities",
+        _ => "β₃"
+    }));
 
     private static string DimensionName(int dimension) => dimension switch
     {
