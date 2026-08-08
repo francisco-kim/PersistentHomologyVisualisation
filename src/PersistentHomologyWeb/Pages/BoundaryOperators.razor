@@ -40,7 +40,7 @@
             </div>
             <div class="readout" title="Euler characteristic: the counts to the left, alternating. It also equals the Betti numbers alternating — see the panel beside the rank table.">
                 <span class="readout-label">χ</span>
-                <span class="readout-value">@State.Complex.EulerCharacteristic</span>
+                <span class="readout-value">@Signed(State.Complex.EulerCharacteristic)</span>
             </div>
         </div>
         <p class="control-hint">
@@ -149,12 +149,28 @@
                     @* The same number counted twice over: once off the simplices,
                        once off the holes. Shown live because the equality is far
                        more convincing when both sides move under the fill-level
-                       control and keep agreeing. *@
-                    <span class="betti-summary-euler">
-                        χ = @EulerFromCounts() = @EulerFromBetti() = @State.Complex.EulerCharacteristic
-                    </span>
+                       control and keep agreeing.
+
+                       Stacked on its own line each rather than run together on
+                       one, so the two sums sit directly above one another and
+                       can be compared term by term - which is the whole point of
+                       showing both. Both always have the same number of terms. *@
+                    <div class="euler-identity">
+                        <span class="euler-symbol">χ</span>
+                        <span class="euler-op">=</span>
+                        <span class="euler-sum">@EulerFromCounts()</span>
+
+                        <span></span>
+                        <span class="euler-op">=</span>
+                        <span class="euler-sum">@EulerFromBetti()</span>
+
+                        <span></span>
+                        <span class="euler-op">=</span>
+                        <span class="euler-sum euler-total">@Signed(State.Complex.EulerCharacteristic)</span>
+                    </div>
                     <span class="betti-summary-note">
-                        simplices alternating, then Betti numbers alternating — always equal
+                        simplices alternating, then Betti numbers alternating —
+                        always the same number
                     </span>
                 </div>
             </div>
@@ -432,6 +448,10 @@ else
         Enumerable.Range(0, State.Complex.MaxDimension + 1).Select(State.Complex.Count));
 
     private string EulerFromBetti() => AlternatingSum(State.Homology.Select(info => info.Betti));
+
+    // A typographic minus, matching the one separating the terms of the sums.
+    // The default ToString would put a hyphen next to them.
+    private static string Signed(int value) => value < 0 ? $"−{-value}" : value.ToString();
 
     private static string AlternatingSum(IEnumerable<int> terms) =>
         string.Concat(terms.Select((value, k) =>

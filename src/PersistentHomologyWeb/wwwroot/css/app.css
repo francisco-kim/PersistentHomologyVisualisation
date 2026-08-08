@@ -850,11 +850,15 @@ input[type="number"] {
     color: var(--text-muted);
 }
 
-/* The chi identity. Monospaced and tabular so the two alternating sums line up
-   as sums rather than as prose, and ruled off because it is a second reading of
-   the same block's numbers rather than more of the first. */
-.betti-summary-euler {
-    display: block;
+/* The chi identity, one step per row with the equals signs in a column of their
+   own. Monospaced and tabular so the two sums sit digit above digit and can be
+   read against each other - they always have the same number of terms. Ruled
+   off because it is a second reading of the same block's numbers rather than
+   more of the first. */
+.euler-identity {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0.15rem 0.45rem;
     margin-top: 0.5rem;
     padding-top: 0.5rem;
     border-top: 1px solid var(--border);
@@ -863,7 +867,21 @@ input[type="number"] {
     font-size: 0.85rem;
     color: var(--text-primary);
     overflow-x: auto;
+}
+
+/* A sum never breaks mid-formula; the grid scrolls instead. */
+.euler-sum {
     white-space: nowrap;
+}
+
+.euler-symbol,
+.euler-op {
+    color: var(--text-muted);
+}
+
+.euler-total {
+    font-weight: 700;
+    color: var(--accent);
 }
 
 .matrix-figure-row {
