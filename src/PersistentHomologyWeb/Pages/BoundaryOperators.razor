@@ -175,19 +175,6 @@
                 </div>
             </div>
 
-            @* Degree 0 lives here rather than in the strip: it is the zero map
-               at every preset and fill level, so it never rewards a glance,
-               and parking it in the panel's spare vertical space lets the
-               matrices that do change line up in a single row. *@
-            <div class="control-group">
-                <BoundaryMatrix Matrix="State.Displayed(0)"
-                                Rows="State.DisplayedRows(0)"
-                                Columns="State.DisplayedColumns(0)"
-                                Degree="0"
-                                Transposed="State.Transposed"
-                                Coefficients="State.Coefficients"
-                                Compact="true" />
-            </div>
         </aside>
     </div>
 </div>
@@ -207,6 +194,20 @@
                         RelatedIndices="State.RelatedIndices"
                         OnSelect="OnMatrixSelect" />
     }
+</div>
+
+@* Degree 0 trails the strip rather than leading it, and gets a bar of its own
+   rather than a card in the row. It is the zero map at every preset and every
+   fill level, so it never rewards a glance and does not deserve a slot beside
+   the matrices that do change - but it has no table to show either, only a
+   sentence, so a full-width bar wastes none of the height a card would. *@
+<div class="matrix-zero-bar">
+    <BoundaryMatrix Matrix="State.Displayed(0)"
+                    Rows="State.DisplayedRows(0)"
+                    Columns="State.DisplayedColumns(0)"
+                    Degree="0"
+                    Transposed="State.Transposed"
+                    Coefficients="State.Coefficients" />
 </div>
 
 @if (State.DoubleBoundary is { } expansion)
@@ -461,14 +462,18 @@ else
     // number of Betti numbers follows the fill level (two at frame, four at
     // solid), and a caption listing three names beside two or four numbers
     // invites the reader to line them up wrongly.
-    // Above dimension 2 there is no everyday word for what beta counts, so the
-    // symbol stands in rather than a coined one.
+    //
+    // "3D voids" names beta_3 by the dimension of the class, the same
+    // convention the explainer uses when it calls beta_k the count of
+    // k-dimensional holes. It is worth spelling out even though nothing here
+    // can have one - beta_3 is zero for anything that fits in three-space -
+    // because a trailing zero with no name attached looks like a defect.
     private string BettiNote() => string.Join(", ", State.Homology.Select(info => info.Dimension switch
     {
         0 => "pieces",
         1 => "loops",
         2 => "cavities",
-        _ => "β₃"
+        _ => "β₃ (3D voids)"
     }));
 
     private static string DimensionName(int dimension) => dimension switch

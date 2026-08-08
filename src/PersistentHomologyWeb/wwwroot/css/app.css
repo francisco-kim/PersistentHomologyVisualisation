@@ -170,11 +170,6 @@ html, body {
     .sim-layout {
         grid-template-columns: 1fr;
     }
-
-    .lattice-panel {
-        position: static;
-        max-width: none;
-    }
 }
 
 .sim-side {
@@ -198,6 +193,18 @@ html, body {
        own natural height and free to stick while scrolling, even when the
        persistence diagram makes the controls column taller than it. */
     align-self: start;
+}
+
+/* Must follow the rule above, not sit with the other single-column overrides
+   further up: same specificity, so source order decides, and declaring this
+   before `position: sticky` simply loses. Below the breakpoint the panel is a
+   full-width row of its own with nothing beside it to stay level with, and a
+   pinned 480px panel would cover most of a phone screen. */
+@media (max-width: 900px) {
+    .lattice-panel {
+        position: static;
+        max-width: none;
+    }
 }
 
 .canvas-stack {
@@ -716,6 +723,36 @@ input[type="number"] {
     border-radius: 8px;
     color: var(--text-muted);
     font-size: 0.82rem;
+}
+
+/* Degree 0, on its own line under the strip. It carries a sentence rather than
+   a table, so it is laid out along the page instead of down it: title and shape
+   at the left, the sentence running on beside them. */
+.matrix-zero-bar {
+    margin-top: 1rem;
+}
+
+.matrix-zero-bar .matrix-card {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    width: 100%;
+}
+
+.matrix-zero-bar .matrix-heading {
+    margin-bottom: 0;
+    gap: 0.75rem;
+    /* Does not stretch: the sentence beside it should start right after the
+       label, not across a gap the size of the page. */
+    flex: 0 0 auto;
+}
+
+.matrix-zero-bar .matrix-empty {
+    flex: 1 1 18rem;
+    max-width: none;
+    border: none;
+    padding: 0;
 }
 
 /* Wide matrices scroll inside their own card rather than widening the page. */
