@@ -107,6 +107,19 @@ export function setComplex(id, vertexXyzView, edgePairsView, triTriplesView, tet
   scene.tris = triTriplesView.slice();
   scene.tets = tetQuadsView.slice();
   scene.solid = solid;
+
+  // The cached highlight is a (dimension, index) pair into the complex that has
+  // just been replaced, so it is meaningless now - index 0 in dimension 3 may
+  // denote a different tetrahedron, or none at all. Dropping it here mirrors
+  // Recompute() clearing the selection on the C# side, and has to happen before
+  // this render: C# pushes the new highlight only after setComplex returns, so
+  // the frame drawn here would otherwise index arrays that no longer have the
+  // entries it names.
+  scene.selectedDim = -1;
+  scene.selectedIndex = -1;
+  scene.relatedDim = -1;
+  scene.related = new Int32Array(0);
+
   render(scene);
 }
 
@@ -272,7 +285,30 @@ function render(scene) {
   }
 }
 
+// Whether the complex currently held by the scene actually has this simplex.
+// setComplex drops the highlight precisely so this is always true, but drawing
+// is one push behind C# by construction, and an index that is off the end reads
+// as `undefined` rather than throwing - so it lands as `points[undefined].x`
+// inside a canvas call, which tears down the whole Blazor render tree over a
+// highlight that is merely stale. Skipping the draw degrades to no highlight.
+function simplexExists(scene, points, dimension, index) {
+  if (index < 0) {
+    return false;
+  }
+  switch (dimension) {
+    case 0: return index < points.length;
+    case 1: return (2 * index) + 1 < scene.edges.length;
+    case 2: return (3 * index) + 2 < scene.tris.length;
+    case 3: return (4 * index) + 3 < scene.tets.length;
+    default: return false;
+  }
+}
+
 function drawSimplex(scene, points, dimension, index, colour, emphasis) {
+  if (!simplexExists(scene, points, dimension, index)) {
+    return;
+  }
+
   const ctx = scene.ctx;
   ctx.strokeStyle = colour;
   ctx.fillStyle = colour;

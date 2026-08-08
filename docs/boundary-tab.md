@@ -115,6 +115,18 @@ the complex (when it changes) and the highlight (when the selection changes).
   so a painter's-algorithm sort would cost a sort per frame and produce the
   identical image. Depth still decides picking. If faces ever get distinct
   colours, the sort has to come back — ascending depth, farthest first.
+- **`setComplex` drops the cached highlight**, mirroring `Recompute()` clearing
+  the selection on the C# side and for the same reason: a `(dimension, index)`
+  pair means nothing once the complex under it has changed. It has to happen
+  there rather than being left to the next push, because `PushComplex` calls
+  `SetComplex` *then* `PushHighlight` — so the frame drawn inside `setComplex`
+  would otherwise highlight a simplex the new geometry no longer has. It did:
+  selecting the tetrahedron and dropping to **frame** left `scene.tets` empty,
+  `scene.tets[0]` read `undefined`, and `points[undefined].x` threw inside a
+  canvas call, taking down the whole Blazor render tree — "An unhandled error
+  has occurred", on every preset or fill-level change made with a selection.
+  `drawSimplex` also bounds-checks the index now, so a stale highlight degrades
+  to no highlight instead of tearing down the page.
 - **Colours are read from CSS custom properties at draw time**, so the module
   subscribes to `prefers-color-scheme` and calls `refresh()`. Without it a
   scheme change leaves the canvas painted in the old palette until something
