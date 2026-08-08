@@ -530,6 +530,297 @@ input[type="number"] {
     margin: 0;
 }
 
+/* ---------- boundary operators ---------- */
+
+.ph-canvas-3d {
+    aspect-ratio: 640 / 460;
+    cursor: grab;
+    touch-action: none;
+}
+
+.ph-canvas-3d:active {
+    cursor: grabbing;
+}
+
+.segmented {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.segmented-option {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    border: none;
+    border-right: 1px solid var(--border);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.segmented-option:last-child {
+    border-right: none;
+}
+
+.segmented-option:hover {
+    background: var(--grid-line);
+}
+
+.segmented-option-active {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.segmented-option-active:hover {
+    background: var(--accent);
+}
+
+/* Flex rather than a grid of equal tracks: these matrices differ a lot in
+   width, and a fixed track would clip the widest one's headers behind its own
+   scrollbar for no reason. Cards size to content and wrap. */
+.matrix-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    align-items: start;
+}
+
+.matrix-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.matrix-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.matrix-shape {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.matrix-empty {
+    margin: 0;
+    max-width: 16rem;
+    padding: 0.7rem;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+/* Wide matrices scroll inside their own card rather than widening the page. */
+.matrix-scroll {
+    overflow-x: auto;
+}
+
+.matrix-table,
+.betti-table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+}
+
+.matrix-table td,
+.matrix-table th,
+.betti-table td,
+.betti-table th {
+    padding: 0.22rem 0.4rem;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.matrix-header {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.matrix-header:hover {
+    background: var(--grid-line);
+    color: var(--text-primary);
+}
+
+.matrix-header-selected {
+    background: var(--series-8);
+    color: var(--accent-ink);
+    font-weight: 700;
+}
+
+.matrix-header-selected:hover {
+    background: var(--series-8);
+    color: var(--accent-ink);
+}
+
+.matrix-header-related {
+    background: var(--series-1);
+    color: var(--accent-ink);
+}
+
+.matrix-header-related:hover {
+    background: var(--series-1);
+    color: var(--accent-ink);
+}
+
+.matrix-zero {
+    color: var(--text-muted);
+}
+
+.matrix-positive {
+    color: var(--series-1);
+    font-weight: 600;
+}
+
+.matrix-negative {
+    color: var(--series-8);
+    font-weight: 600;
+}
+
+/* The band that makes a column read as "these are this simplex's faces". */
+.matrix-cell-selected {
+    background: var(--grid-line);
+}
+
+.betti-table th {
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+}
+
+.betti-value {
+    font-weight: 700;
+}
+
+.matrix-figure {
+    overflow-x: auto;
+    background: var(--page);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+/* ---------- the d.d = 0 demonstrator ---------- */
+
+.double-boundary {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.4rem;
+    margin-top: 1.25rem;
+    max-width: 62rem;
+}
+
+.double-boundary h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.6rem;
+}
+
+.double-boundary p {
+    color: var(--text-secondary);
+    margin: 0.6rem 0;
+}
+
+.double-boundary-idle {
+    padding: 0.9rem 1.4rem;
+}
+
+.double-boundary-idle .control-hint {
+    margin: 0;
+}
+
+.expansion {
+    /* Six cancelling pairs at most (a tetrahedron), so six colours. The last
+       two have no design token because nothing else needs them. */
+    --pair-0: var(--series-1);
+    --pair-1: var(--series-2);
+    --pair-2: var(--series-3);
+    --pair-3: var(--series-8);
+    --pair-4: #8a63d2;
+    --pair-5: #c9447a;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.82rem;
+    padding: 0.7rem 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .expansion {
+        --pair-4: #a081e0;
+        --pair-5: #e0698f;
+    }
+}
+
+.expansion-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    white-space: nowrap;
+}
+
+.expansion-face {
+    min-width: 7rem;
+    text-align: right;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.expansion-equals {
+    color: var(--text-muted);
+}
+
+.expansion-terms {
+    display: flex;
+    gap: 0.45rem;
+}
+
+.expansion-term {
+    padding: 0.05rem 0.3rem;
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+.expansion-total {
+    border-top: 1px solid var(--border);
+    padding-top: 0.4rem;
+    margin-top: 0.2rem;
+}
+
+.pair-0 { color: var(--pair-0); background: color-mix(in srgb, var(--pair-0) 12%, transparent); }
+.pair-1 { color: var(--pair-1); background: color-mix(in srgb, var(--pair-1) 12%, transparent); }
+.pair-2 { color: var(--pair-2); background: color-mix(in srgb, var(--pair-2) 12%, transparent); }
+.pair-3 { color: var(--pair-3); background: color-mix(in srgb, var(--pair-3) 12%, transparent); }
+.pair-4 { color: var(--pair-4); background: color-mix(in srgb, var(--pair-4) 12%, transparent); }
+.pair-5 { color: var(--pair-5); background: color-mix(in srgb, var(--pair-5) 12%, transparent); }
+
+@media (max-width: 700px) {
+    .expansion-face {
+        min-width: 5.5rem;
+    }
+}
+
 /* ---------- loading & error UI ---------- */
 
 .app-loading {

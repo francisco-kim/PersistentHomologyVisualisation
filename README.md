@@ -27,6 +27,33 @@ via boundary-matrix reduction over Z/2, entirely in your browser
 - Switch to the **advanced view** for the persistence diagram (birth vs.
   death scatter) alongside the barcode.
 
+## The boundary operators tab
+
+[`/boundary`](https://francisco-kim.github.io/PersistentHomologyVisualisation/boundary)
+takes the matrix the simulator reduces and puts it on screen. A small
+hand-authored complex in 3D — a tetrahedron, optionally with a fifth vertex
+closing a triangular loop whose face is never filled — is shown alongside its
+boundary matrices $\partial_0$ through $\partial_3$, computed over
+$\mathbb{Z}$ with signs rather than over $\mathbb{Z}/2$.
+
+- **Click anything** — a row, a column, or the shape itself — to see which
+  simplex it stands for. Selecting a column highlights that simplex together
+  with the faces listed down its column.
+- **Transpose** the matrices to get the coboundary operators
+  $\delta^k = \partial_{k+1}^{\mathsf T}$. The same click then highlights
+  *cofaces* instead of faces: a column of $\partial$ lists what a simplex is
+  bounded by, a column of $\partial^{\mathsf T}$ lists what it is a face of.
+- **Fill level** (frame / surface / solid) adds triangles and then tetrahedra
+  without moving a point, so the Betti numbers change purely by columns
+  appearing in $\partial_2$ and $\partial_3$ — one column in $\partial_3$
+  visibly kills the tetrahedron's cavity.
+- A live **rank / nullity / Betti** readout, and a panel expanding
+  $\partial(\partial\sigma) = 0$ term by term with the cancelling pairs
+  colour-matched.
+
+The rendering is hand-rolled canvas 2D — projection, painter's-algorithm face
+sorting and drag rotation — so the tab adds no dependency.
+
 ## Topology
 
 See the in-app explainer (below the simulation, and in full at

@@ -9,5 +9,6 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddSingleton<HomologyRunner>();
+builder.Services.AddSingleton<BoundaryExplorerState>();
 
 await builder.Build().RunAsync();

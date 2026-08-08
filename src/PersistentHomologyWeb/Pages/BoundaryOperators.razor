@@ -1,0 +1,654 @@
+@page "/boundary"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject BoundaryExplorerState State
+@using PersistentHomologyWeb.Interop
+
+<h1 class="page-title">Boundary operators</h1>
+<p class="page-intro">
+    A small complex in three dimensions, and the matrices that encode it. Click
+    anything — a row, a column, or the shape itself — to see which simplex it
+    stands for. Transpose the matrices and the same click tells you what a
+    simplex is a face <em>of</em> instead of what it is bounded <em>by</em>.
+</p>
+
+<div class="sim-layout">
+    <section class="lattice-panel">
+        <p class="panel-caption">
+            Drag to rotate — click a vertex, edge, face, or the dot at a
+            tetrahedron's centre to select it.
+        </p>
+        <div class="canvas-stack">
+            <canvas id="@CanvasId" class="ph-canvas ph-canvas-3d"></canvas>
+        </div>
+        <div class="readout-row">
+            <div class="readout">
+                <span class="readout-label">vertices</span>
+                <span class="readout-value">@State.Complex.Count(0)</span>
+            </div>
+            <div class="readout">
+                <span class="readout-label">edges</span>
+                <span class="readout-value">@State.Complex.Count(1)</span>
+            </div>
+            <div class="readout">
+                <span class="readout-label">triangles</span>
+                <span class="readout-value">@State.Complex.Count(2)</span>
+            </div>
+            <div class="readout">
+                <span class="readout-label">tetrahedra</span>
+                <span class="readout-value">@State.Complex.Count(3)</span>
+            </div>
+            <div class="readout">
+                <span class="readout-label">χ</span>
+                <span class="readout-value">@State.Complex.EulerCharacteristic</span>
+            </div>
+        </div>
+        <p class="control-hint">
+            @if (State.SelectedSimplex is { } selected)
+            {
+                <span>
+                    Selected <strong>@DimensionName(selected.Dimension) @selected.Label</strong> —
+                    @if (State.RelatedIndices.Length == 0)
+                    {
+                        <span>@(State.Transposed ? "it is the face of nothing above it, so its coboundary is zero." : "it has no faces below it.")</span>
+                    }
+                    else
+                    {
+                        <span>
+                            highlighted with the @State.RelatedIndices.Length
+                            @(State.Transposed ? "simplices it is a face of" : "faces it is bounded by").
+                        </span>
+                    }
+                </span>
+            }
+            else
+            {
+                <span>Nothing selected.</span>
+            }
+        </p>
+    </section>
+
+    <div class="sim-side">
+        <aside class="controls">
+            <div class="control-group">
+                <label class="control-label" for="preset-select">Complex</label>
+                <select id="preset-select" value="@State.Preset" @onchange="OnPresetChanged">
+                    @foreach (var kind in Enum.GetValues<BoundaryPresetKind>())
+                    {
+                        <option value="@kind">@PresetName(kind)</option>
+                    }
+                </select>
+                <span class="control-hint">@PresetHint(State.Preset)</span>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Fill level</span>
+                <div class="segmented">
+                    @foreach (var level in Enum.GetValues<FillLevel>())
+                    {
+                        var captured = level;
+                        <button type="button"
+                                class="segmented-option @(State.FillLevel == captured ? "segmented-option-active" : "")"
+                                @onclick="() => OnFillLevelChanged(captured)">
+                            @captured.ToString().ToLowerInvariant()
+                        </button>
+                    }
+                </div>
+                <span class="control-hint">
+                    How far up the complex is filled in — the same points, with
+                    triangles and then tetrahedra added.
+                </span>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">View</span>
+                <label class="check-label">
+                    <input type="checkbox" checked="@State.Transposed" @onchange="OnTransposedChanged" />
+                    transpose (show the coboundary)
+                </label>
+                <label class="check-label">
+                    <input type="checkbox" checked="@(State.Coefficients == Coefficients.Mod2)"
+                           @onchange="OnCoefficientsChanged" />
+                    collapse signs to <span data-katex="\mathbb{Z}/2"></span>
+                </label>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Ranks and Betti numbers</span>
+                <div class="matrix-scroll">
+                    <table class="betti-table">
+                        <thead>
+                            <tr>
+                                <th scope="col"><span data-katex="k"></span></th>
+                                <th scope="col"><span data-katex="n_k"></span></th>
+                                <th scope="col"><span data-katex="\operatorname{rank}\partial_k"></span></th>
+                                <th scope="col"><span data-katex="\dim\ker\partial_k"></span></th>
+                                <th scope="col"><span data-katex="\operatorname{rank}\partial_{k+1}"></span></th>
+                                <th scope="col"><span data-katex="\beta_k"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var info in State.Homology)
+                            {
+                                <tr>
+                                    <td>@info.Dimension</td>
+                                    <td>@info.SimplexCount</td>
+                                    <td>@info.BoundaryRank</td>
+                                    <td>@info.CycleRank</td>
+                                    <td>@info.BoundaryRankAbove</td>
+                                    <td class="betti-value">@info.Betti</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <span class="control-hint">@BettiSummary()</span>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<div class="matrix-strip">
+    @for (int degree = 0; degree <= State.HighestDisplayedDegree; degree++)
+    {
+        int k = degree;
+        <BoundaryMatrix Matrix="State.Displayed(k)"
+                        Rows="State.DisplayedRows(k)"
+                        Columns="State.DisplayedColumns(k)"
+                        Degree="k"
+                        Transposed="State.Transposed"
+                        Selection="State.Selection"
+                        RelatedDimension="State.RelatedDimension"
+                        RelatedIndices="State.RelatedIndices"
+                        OnSelect="OnMatrixSelect" />
+    }
+</div>
+
+@if (State.DoubleBoundary is { } expansion)
+{
+    <section class="double-boundary">
+        <h2>Why <span data-katex="\partial \circ \partial = 0"></span>, on this simplex</h2>
+        <p>
+            Take the boundary of <strong>@expansion.Simplex.Label</strong>, then take
+            the boundary of that. Every face below turns up exactly twice with
+            opposite signs — matching colours mark the pairs — so all
+            @(expansion.PairCount * 2) terms annihilate.
+        </p>
+        <div class="expansion">
+            @foreach (var row in expansion.Rows)
+            {
+                <div class="expansion-row">
+                    <span class="expansion-face">
+                        @(row.Sign > 0 ? "+" : "−") ∂@(row.Face.Label)
+                    </span>
+                    <span class="expansion-equals">=</span>
+                    <span class="expansion-terms">
+                        @foreach (var term in row.Terms)
+                        {
+                            <span class="expansion-term pair-@(term.CancellingPair % 6)">
+                                @(term.Sign > 0 ? "+" : "−")@term.Simplex.Label
+                            </span>
+                        }
+                    </span>
+                </div>
+            }
+            <div class="expansion-row expansion-total">
+                <span class="expansion-face">total</span>
+                <span class="expansion-equals">=</span>
+                <span class="expansion-terms"><strong>0</strong></span>
+            </div>
+        </div>
+        <p class="control-hint">
+            Tick <strong>collapse signs</strong> and the identity still holds, but
+            the mechanism vanishes: without signs there is nothing to see
+            cancelling, only pairs adding to an even number.
+        </p>
+    </section>
+}
+else
+{
+    <section class="double-boundary double-boundary-idle">
+        <p class="control-hint">
+            Select a triangle or a tetrahedron — in a matrix or in the shape — to
+            see <span data-katex="\partial(\partial\sigma) = 0"></span> worked out
+            term by term.
+        </p>
+    </section>
+}
+
+<section class="explainer">
+    <h2>Chains</h2>
+    <p>
+        Fix a complex — some vertices, the edges between them, the triangles
+        filling those in, and so on. A <strong>@("k")-chain</strong> is a formal
+        sum of @("k")-simplices with coefficients, and the collection of them is
+        the group <span data-katex="C_k"></span>. To add chains you need a sign
+        convention, and for that you need an <em>orientation</em>: an ordering of
+        each simplex's vertices, taken here to be ascending index order. Swapping
+        two vertices flips the sign, which is why <span data-katex="[0\,1]"></span>
+        and <span data-katex="[1\,0]"></span> are the same edge traversed in
+        opposite directions.
+    </p>
+
+    <h2>The boundary operator</h2>
+    <p>
+        The boundary of a simplex is the alternating sum of the faces you get by
+        deleting one vertex at a time:
+    </p>
+    <div data-katex="\partial_k[v_0 \cdots v_k] \;=\; \sum_{i=0}^{k} (-1)^i\,[v_0 \cdots \widehat{v_i} \cdots v_k]"
+         data-katex-display></div>
+    <p>
+        The hat means "omit this one". Written as a matrix — rows indexed by
+        @("(k−1)")-simplices, columns by @("k")-simplices —
+        <strong>every column is one simplex's boundary</strong>. That is exactly
+        what the highlight shows: click a column header and the shape lights up
+        with that simplex and the faces listed down its column.
+    </p>
+    <p>
+        For the plain <strong>tetrahedron</strong> preset at <em>solid</em> fill,
+        the three non-trivial matrices are these — switch the complex above to
+        check the app against them entry for entry:
+    </p>
+    <pre class="matrix-figure"><code>        ∂₁  (4×6)                        ∂₂  (6×4)            ∂₃ (4×1)
+
+     01  02  03  12  13  23           012 013 023 123          0123
+[0]  −1  −1  −1   ·   ·   ·    [01]   +1  +1   ·   ·   [012]    −1
+[1]  +1   ·   ·  −1  −1   ·    [02]   −1   ·  +1   ·   [013]    +1
+[2]   ·  +1   ·  +1   ·  −1    [03]    ·  −1  −1   ·   [023]    −1
+[3]   ·   ·  +1   ·  +1  +1    [12]   +1   ·   ·  +1   [123]    +1
+                               [13]    ·  +1   ·  −1
+                               [23]    ·   ·  +1  +1</code></pre>
+    <p>
+        Read column <span data-katex="[0\,1\,2]"></span> of
+        <span data-katex="\partial_2"></span> downwards and you get
+        <span data-katex="[1\,2] - [0\,2] + [0\,1]"></span>, which is the formula
+        above with the middle term's sign coming from omitting the middle vertex.
+    </p>
+
+    <h2>Why <span data-katex="\partial_0"></span> is empty</h2>
+    <p>
+        There is no such thing as a @("(−1)")-simplex, so
+        <span data-katex="C_{-1} = 0"></span> and
+        <span data-katex="\partial_0"></span> is the zero map — a matrix with
+        columns but no rows, which is why it is shown above as an empty box
+        rather than omitted. Two consequences follow immediately. Every 0-chain
+        is a cycle, since everything maps to zero; and therefore
+    </p>
+    <div data-katex="\beta_0 \;=\; \dim\ker\partial_0 - \operatorname{rank}\partial_1 \;=\; n_0 - \operatorname{rank}\partial_1"
+         data-katex-display></div>
+    <p>
+        which is the count of connected pieces. So of the four maps
+        <span data-katex="\partial_0"></span> through
+        <span data-katex="\partial_3"></span> that a complex with tetrahedra has,
+        only three carry information — but the empty one is doing real work in
+        that formula.
+    </p>
+
+    <h2><span data-katex="\partial \circ \partial = 0"></span></h2>
+    <p>
+        Take any simplex and remove two vertices, one after the other. You can
+        remove them in either order, so every codimension-2 face is reached along
+        exactly two paths — and the two paths pick up opposite signs, because
+        deleting the earlier vertex first shifts the position of the later one.
+        The panel above works this out on whichever simplex you have selected.
+    </p>
+    <p>
+        Because boundaries have no boundary,
+        <span data-katex="\operatorname{im}\partial_{k+1} \subseteq \ker\partial_k"></span>
+        — every boundary is a cycle. That containment is what makes the quotient
+        below well defined.
+    </p>
+
+    <h2>Cycles, boundaries, and Betti numbers</h2>
+    <p>
+        The <strong>cycles</strong> <span data-katex="Z_k = \ker\partial_k"></span>
+        are the chains with empty boundary — closed loops, closed surfaces. The
+        <strong>boundaries</strong>
+        <span data-katex="B_k = \operatorname{im}\partial_{k+1}"></span> are the
+        cycles that are already the edge of something one dimension up. Homology
+        is what is left over:
+    </p>
+    <div data-katex="H_k \;=\; \ker \partial_k \,/\, \operatorname{im} \partial_{k+1}" data-katex-display></div>
+    <p>
+        and its rank is the <strong>Betti number</strong>
+        <span data-katex="\beta_k"></span> — the count of
+        @("k")-dimensional holes. <span data-katex="\beta_0"></span> counts
+        connected pieces, <span data-katex="\beta_1"></span> counts loops that
+        never get filled in, <span data-katex="\beta_2"></span> counts enclosed
+        cavities. Every one of those numbers comes out of the ranks of the two
+        adjacent matrices, which is what the readout beside the shape is
+        tabulating:
+    </p>
+    <div data-katex="\beta_k \;=\; \underbrace{n_k - \operatorname{rank}\partial_k}_{\dim \ker \partial_k} \;-\; \operatorname{rank}\partial_{k+1}"
+         data-katex-display></div>
+
+    <h2>Watch a hole die</h2>
+    <p>
+        The <strong>fill level</strong> control is the whole lesson in one
+        gesture. It never moves a point — it only decides which simplices exist —
+        so the matrices grow columns while everything else stays put.
+    </p>
+    <p>
+        On the plain <strong>tetrahedron</strong>: at <em>frame</em> there are no
+        triangles at all, so <span data-katex="\partial_2"></span> has no columns,
+        nothing bounds anything, and the six edges carry
+        <span data-katex="\beta_1 = 3"></span> independent loops. At
+        <em>surface</em> the four triangles appear as four columns of
+        <span data-katex="\partial_2"></span>; they fill every loop
+        (<span data-katex="\beta_1 = 0"></span>) and their sum closes up into a
+        hollow shell — a 2-cycle bounding nothing, so
+        <span data-katex="\beta_2 = 1"></span>. At <em>solid</em> a single column
+        appears in <span data-katex="\partial_3"></span>, that shell becomes its
+        boundary, and the cavity dies:
+        <span data-katex="\beta_2 = 0"></span>. One column, one hole.
+    </p>
+    <p>
+        The <strong>tetrahedron with an open triangle</strong> adds a fifth
+        vertex joined to vertices 2 and 3. With the existing edge
+        <span data-katex="[2\,3]"></span> that closes a triangular loop — but the
+        face <span data-katex="[2\,3\,4]"></span> is deliberately never added at
+        any fill level. So that loop is a cycle which is never a boundary, and
+        <span data-katex="\beta_1 = 1"></span> survives all the way to
+        <em>solid</em>, sitting next to a cavity that does not. It is the
+        difference between a hole that gets filled and a hole that stays open,
+        visible in the same picture.
+    </p>
+
+    <h2>Transposing: the coboundary</h2>
+    <p>
+        A <strong>cochain</strong> is a function on simplices — a number attached
+        to each one, rather than a formal sum of them. The
+        <strong>coboundary</strong> of a cochain is defined by evaluating it on
+        boundaries:
+    </p>
+    <div data-katex="(\delta^k f)(\sigma) \;=\; f(\partial_{k+1}\sigma)" data-katex-display></div>
+    <p>
+        which, written out in matrices, says precisely
+        <span data-katex="\delta^k = \partial_{k+1}^{\mathsf T}"></span>. Ticking
+        <strong>transpose</strong> above shows exactly these. For the
+        tetrahedron:
+    </p>
+    <pre class="matrix-figure"><code>       δ⁰ = ∂₁ᵀ  (6×4)                    δ¹ = ∂₂ᵀ  (4×6)
+
+       [0] [1] [2] [3]                    01  02  03  12  13  23
+[01]   −1  +1   ·   ·           [012]     +1  −1   ·  +1   ·   ·
+[02]   −1   ·  +1   ·           [013]     +1   ·  −1   ·  +1   ·
+[03]   −1   ·   ·  +1           [023]      ·  +1  −1   ·   ·  +1
+[12]    ·  −1  +1   ·           [123]      ·   ·   ·  +1  −1  +1
+[13]    ·  −1   ·  +1
+[23]    ·   ·  −1  +1</code></pre>
+    <p>
+        <strong>Faces become cofaces.</strong> Reading
+        <span data-katex="\partial_2"></span> down column
+        <span data-katex="[0\,1\,2]"></span> gives the three edges that triangle
+        is bounded by. Reading <span data-katex="\delta^1"></span> down column
+        <span data-katex="[0\,1]"></span> gives
+        <span data-katex="+1"></span> at <span data-katex="[0\,1\,2]"></span> and
+        <span data-katex="+1"></span> at <span data-katex="[0\,1\,3]"></span> —
+        the two triangles that edge is a face <em>of</em>. Same numbers, read the
+        other way: a column of <span data-katex="\partial"></span> lists faces, a
+        column of <span data-katex="\partial^{\mathsf T}"></span> lists cofaces.
+        That is the entire content of the transpose toggle, and it is what the
+        highlight switches between.
+    </p>
+    <p>
+        The open-triangle preset makes the degenerate case visible. Its edges
+        <span data-katex="[2\,4]"></span> and <span data-katex="[3\,4]"></span>
+        are the face of no triangle, so each indexes an all-zero row of
+        <span data-katex="\partial_2"></span> — equivalently an all-zero column of
+        <span data-katex="\delta^1"></span>. A cochain can be nonzero on those
+        edges and the coboundary will not notice anywhere.
+    </p>
+
+    <h2>Why "differential operator"</h2>
+    <p>
+        Take a function <span data-katex="f"></span> on the vertices — one number
+        at each. Push it through <span data-katex="\delta^0"></span> using the
+        table above and the value landing on edge
+        <span data-katex="[a\,b]"></span> is
+    </p>
+    <div data-katex="(\delta^0 f)([a\,b]) \;=\; f(b) - f(a)" data-katex-display></div>
+    <p>
+        a <strong>discrete derivative</strong>: the coboundary of a function is
+        its gradient, recording the change in <span data-katex="f"></span> along
+        every edge. And <span data-katex="\delta^0 f = 0"></span> exactly when
+        <span data-katex="f"></span> is constant on each connected piece — so
+        <span data-katex="\ker\delta^0"></span> has one dimension per component.
+        That is <span data-katex="H^0"></span>, and its dimension is
+        <span data-katex="\beta_0"></span>: the abstract statement
+        <span data-katex="H^0 \cong H_0"></span> is just the observation that the
+        functions with zero derivative are the locally constant ones.
+    </p>
+    <p>
+        One level up, <span data-katex="\delta^1"></span> sums an edge-cochain
+        around each triangle's boundary — a <strong>discrete curl</strong>, the
+        circulation around a face. Then
+        <span data-katex="\delta^1\delta^0 = 0"></span> is literally
+        <span data-katex="\operatorname{curl}\operatorname{grad} = 0"></span>,
+        the transpose of <span data-katex="\partial\partial = 0"></span>. This is
+        the finite-dimensional shadow of the de Rham complex, where
+        <span data-katex="d \circ d = 0"></span> encodes those same classical
+        identities — which is where the name comes from.
+    </p>
+
+    <h2>Homology and cohomology</h2>
+    <p>
+        Since <span data-katex="\delta \circ \delta = 0"></span> too, the
+        coboundary maps form their own complex running the other way, with
+        <span data-katex="H^k = \ker\delta^k / \operatorname{im}\delta^{k-1}"></span>.
+        Over a field, <span data-katex="\operatorname{rank} M = \operatorname{rank} M^{\mathsf T}"></span>,
+        so the kernel and image dimensions match up and
+        <span data-katex="H^k \cong H_k"></span>. The Betti numbers are
+        identical — which is why the readout beside the shape does
+        <em>not</em> move when you tick transpose. That is the theorem working,
+        not the toggle failing.
+    </p>
+    <p>
+        What differs is what the classes <em>are</em>. A homology class is a
+        cycle built out of simplices; a cohomology class is a function on them.
+        The payoff for that shift is structure: cohomology carries a ring
+        multiplication, the <strong>cup product</strong>, which homology has no
+        analogue of — and that is enough to tell apart spaces whose Betti
+        numbers agree. Over <span data-katex="\mathbb{Z}"></span> the
+        correspondence is not even an isomorphism: torsion reappears one degree
+        up, which is the same Universal Coefficient Theorem discussed on the
+        <a href="explainer">detailed explanation</a> page.
+    </p>
+
+    <h2>A note on coefficients</h2>
+    <p>
+        This page works over <span data-katex="\mathbb{Z}"></span> by default,
+        because the signs <em>are</em> the subject — orientation is what makes
+        <span data-katex="\partial\partial = 0"></span> a cancellation rather
+        than a parity accident. The simulator computes over
+        <span data-katex="\mathbb{Z}/2"></span> instead, where there are no signs
+        to track and a chain is just a set of simplices, which is what its
+        reduction algorithm wants. Tick <strong>collapse signs</strong> to see
+        that convention here. For these complexes the Betti numbers come out the
+        same either way — there is no torsion to expose — so the toggle changes
+        the display and not the answer.
+    </p>
+    <p class="control-hint">
+        For the point-cloud side of all this — filtrations, barcodes, and how
+        these matrices get reduced to pair births with deaths — see the
+        <a href="">simulator</a> and the
+        <a href="explainer">detailed explanation</a>.
+    </p>
+</section>
+
+@code {
+    private const string CanvasId = "ph-complex3d";
+
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<BoundaryOperators>? _selfReference;
+    private bool _moduleReady;
+    private bool _needsKatex = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Complex3DInterop.EnsureModuleLoadedAsync();
+            _moduleReady = true;
+
+            Complex3DInterop.InitCanvas(CanvasId, BoundaryExplorerState.CanvasWidth, BoundaryExplorerState.CanvasHeight);
+            PushComplex();
+
+            // Loaded a second time via IJSRuntime for the same reason as the
+            // simulator's rAF loop: attachPicker takes a DotNetObjectReference,
+            // which cannot cross through [JSImport]. ES modules are singletons
+            // per URL, so both imports share the module's state.
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/phComplex3d.js");
+            _selfReference = DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("attachPicker", CanvasId, _selfReference);
+
+            // Typeset on the *next* pass, not this one: StateHasChanged is
+            // about to re-render the matrix cards, which would discard any
+            // KaTeX injected into their captions now.
+            _needsKatex = true;
+            StateHasChanged();
+            return;
+        }
+
+        // KaTeX is only re-typeset when something actually changed the maths on
+        // the page - the matrix captions flip between partial and delta. Doing
+        // it on every render would re-typeset the whole document on each
+        // selection click.
+        if (_needsKatex)
+        {
+            _needsKatex = false;
+            await JS.InvokeVoidAsync("renderKatex");
+        }
+    }
+
+    [JSInvokable]
+    public void OnSimplexPicked(int dimension, int index)
+    {
+        if (dimension < 0) State.ClearSelection();
+        else State.Select(dimension, index);
+
+        AfterSelectionChanged();
+        StateHasChanged();
+    }
+
+    private void OnMatrixSelect((int Dimension, int Index) target)
+    {
+        // Clicking the current selection again clears it, so there is a way
+        // back to the unhighlighted shape without hunting for empty space.
+        if (State.Selection == target) State.ClearSelection();
+        else State.Select(target.Dimension, target.Index);
+
+        AfterSelectionChanged();
+    }
+
+    private void AfterSelectionChanged()
+    {
+        PushHighlight();
+
+        // Selecting swaps the whole d.d = 0 panel in or out, and that panel
+        // carries its own KaTeX - which would otherwise never be typeset,
+        // since it did not exist on any earlier render.
+        _needsKatex = true;
+    }
+
+    private void OnPresetChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<BoundaryPresetKind>(e.Value?.ToString(), out var kind))
+        {
+            State.Preset = kind;
+            PushComplex();
+            _needsKatex = true;
+        }
+    }
+
+    private void OnFillLevelChanged(FillLevel level)
+    {
+        State.FillLevel = level;
+        PushComplex();
+        _needsKatex = true;
+    }
+
+    private void OnTransposedChanged(ChangeEventArgs e)
+    {
+        State.Transposed = e.Value is bool transposed && transposed;
+        PushHighlight();
+        _needsKatex = true;
+    }
+
+    private void OnCoefficientsChanged(ChangeEventArgs e)
+    {
+        State.Coefficients = e.Value is bool mod2 && mod2 ? Coefficients.Mod2 : Coefficients.Integer;
+        PushComplex();
+        _needsKatex = true;
+    }
+
+    private void PushComplex()
+    {
+        if (!_moduleReady) return;
+        Complex3DInterop.SetComplex(
+            CanvasId,
+            State.VertexXyz,
+            State.EdgePairs,
+            State.TriangleTriples,
+            State.TetrahedronQuads,
+            State.FillLevel == FillLevel.Solid);
+        PushHighlight();
+    }
+
+    private void PushHighlight()
+    {
+        if (!_moduleReady) return;
+        Complex3DInterop.SetHighlight(
+            CanvasId,
+            State.Selection?.Dimension ?? -1,
+            State.Selection?.Index ?? -1,
+            State.RelatedDimension,
+            State.RelatedIndices);
+    }
+
+    private string BettiSummary()
+    {
+        var parts = State.Homology.Select(info => info.Betti.ToString());
+        return $"β = ({string.Join(", ", parts)}) — pieces, loops, cavities.";
+    }
+
+    private static string DimensionName(int dimension) => dimension switch
+    {
+        0 => "vertex",
+        1 => "edge",
+        2 => "triangle",
+        _ => "tetrahedron"
+    };
+
+    private static string PresetName(BoundaryPresetKind kind) => kind switch
+    {
+        BoundaryPresetKind.Tetrahedron => "Tetrahedron",
+        BoundaryPresetKind.TetrahedronWithOpenTriangle => "Tetrahedron + open triangle",
+        _ => kind.ToString()
+    };
+
+    private static string PresetHint(BoundaryPresetKind kind) => kind switch
+    {
+        BoundaryPresetKind.Tetrahedron =>
+            "Four points, maximally symmetric — the matrices in the explanation below are this one.",
+        BoundaryPresetKind.TetrahedronWithOpenTriangle =>
+            "A fifth point joined to 2 and 3, closing a loop whose face is never filled — so β₁ = 1 at every fill level.",
+        _ => string.Empty
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("detachPicker", CanvasId);
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _selfReference?.Dispose();
+    }
+}

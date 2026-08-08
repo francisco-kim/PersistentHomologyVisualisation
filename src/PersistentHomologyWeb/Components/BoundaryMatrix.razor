@@ -1,0 +1,136 @@
+@using PersistentHomologyCore.Models
+
+@* One boundary (or coboundary) matrix as a table. Rows and columns are labelled
+   by the simplices they stand for, so selecting a header is selecting a simplex. *@
+
+<div class="matrix-card">
+    <div class="matrix-heading">
+        <span class="matrix-title" data-katex="@TitleTex"></span>
+        <span class="matrix-shape">@Rows.Count &times; @Columns.Count</span>
+    </div>
+
+    @if (Rows.Count == 0 || Columns.Count == 0)
+    {
+        <p class="matrix-empty">@EmptyMessage</p>
+    }
+    else
+    {
+        <div class="matrix-scroll">
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th class="matrix-corner" scope="col"></th>
+                        @for (int c = 0; c < Columns.Count; c++)
+                        {
+                            int column = c;
+                            <th scope="col"
+                                class="matrix-header @(IsSelected(ColumnDimension, column) ? "matrix-header-selected" : IsRelated(ColumnDimension, column) ? "matrix-header-related" : "")"
+                                title="@HeaderTitle(ColumnDimension, Columns[column])"
+                                @onclick="() => OnSelect.InvokeAsync((ColumnDimension, column))">
+                                @Columns[column].Label
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int r = 0; r < Rows.Count; r++)
+                    {
+                        int row = r;
+                        <tr>
+                            <th scope="row"
+                                class="matrix-header @(IsSelected(RowDimension, row) ? "matrix-header-selected" : IsRelated(RowDimension, row) ? "matrix-header-related" : "")"
+                                title="@HeaderTitle(RowDimension, Rows[row])"
+                                @onclick="() => OnSelect.InvokeAsync((RowDimension, row))">
+                                @Rows[row].Label
+                            </th>
+                            @for (int c = 0; c < Columns.Count; c++)
+                            {
+                                int column = c;
+                                <td class="@CellClass(row, column)">@Format(Matrix[row, column])</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int[,] Matrix { get; set; } = new int[0, 0];
+    [Parameter, EditorRequired] public IReadOnlyList<OrientedSimplex> Rows { get; set; } = [];
+    [Parameter, EditorRequired] public IReadOnlyList<OrientedSimplex> Columns { get; set; } = [];
+
+    /// <summary>The degree k of the underlying boundary map, before any transposition.</summary>
+    [Parameter, EditorRequired] public int Degree { get; set; }
+
+    [Parameter] public bool Transposed { get; set; }
+    [Parameter] public (int Dimension, int Index)? Selection { get; set; }
+    [Parameter] public int RelatedDimension { get; set; } = -1;
+    [Parameter] public IReadOnlyList<int> RelatedIndices { get; set; } = [];
+    [Parameter] public EventCallback<(int Dimension, int Index)> OnSelect { get; set; }
+
+    // Transposing d_k gives delta^(k-1): the operator maps up a dimension
+    // instead of down, so the label drops by one.
+    private string TitleTex => Transposed
+        ? $"\\delta^{{{Degree - 1}}} = \\partial_{{{Degree}}}^{{\\mathsf T}}"
+        : $"\\partial_{{{Degree}}}";
+
+    private int RowDimension => Transposed ? Degree : Degree - 1;
+    private int ColumnDimension => Transposed ? Degree - 1 : Degree;
+
+    private string EmptyMessage
+    {
+        get
+        {
+            // Degree 0 is the zero map by definition - C_(-1) is the zero group,
+            // which is why every 0-chain is a cycle and beta_0 counts pieces.
+            if (Degree == 0)
+            {
+                return Transposed
+                    ? "The zero map, transposed: nothing maps down into the vertices, so nothing maps out of them here."
+                    : "The zero map C₀ → 0. It has no rows, so every 0-chain is a cycle.";
+            }
+            return Columns.Count == 0 && !Transposed
+                ? $"No {Degree}-simplices at this fill level, so there is nothing to take the boundary of."
+                : "Empty at this fill level.";
+        }
+    }
+
+    private bool IsSelected(int dimension, int index) =>
+        Selection is { } selection && selection.Dimension == dimension && selection.Index == index;
+
+    private bool IsRelated(int dimension, int index) =>
+        dimension == RelatedDimension && RelatedIndices.Contains(index);
+
+    private string CellClass(int row, int column)
+    {
+        if (Matrix[row, column] == 0) return "matrix-zero";
+
+        bool onSelected = IsSelected(RowDimension, row) || IsSelected(ColumnDimension, column);
+        string sign = Matrix[row, column] > 0 ? "matrix-positive" : "matrix-negative";
+        return onSelected ? $"{sign} matrix-cell-selected" : sign;
+    }
+
+    private string HeaderTitle(int dimension, OrientedSimplex simplex)
+    {
+        string name = dimension switch
+        {
+            0 => "vertex",
+            1 => "edge",
+            2 => "triangle",
+            _ => "tetrahedron"
+        };
+        return $"{name} {simplex.Label} — click to highlight it in the shape";
+    }
+
+    // A dot rather than a zero: the sparsity pattern is the thing to read at a
+    // glance, and a grid of zeros hides it.
+    private static string Format(int value) => value switch
+    {
+        0 => "·",
+        1 => "+1",
+        -1 => "−1",
+        _ => value.ToString("+0;−0")
+    };
+}
