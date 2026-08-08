@@ -59,6 +59,37 @@ terms cancel "with opposite signs" while showing none. The panel is the one
 place a reader can watch the mechanism, so the two modes say different things
 on purpose.
 
+## Where each matrix goes, and how it is labelled
+
+`∂₁` and above live in `.matrix-strip`, one card each, wrapping. `∂₀` does not: it
+is the zero map at every preset and every fill level, so it never rewards a
+glance and does not deserve a slot beside the matrices that do change. It also
+has no table to show — only a sentence — so a card would waste its height. It
+gets `.matrix-zero-bar`, a full-width bar trailing the strip, laid out along the
+page rather than down it. It lived in the controls panel before that, which made
+the panel taller than the canvas beside it.
+
+The coboundary label is `δ^(k-1) = ∂ₖᵀ`, **except at degree 0**, which is
+labelled `∂₀ᵀ` alone. `δ^(-1)` is what the formula gives and it is internally
+consistent, but `C^(-1)` is a group this app never introduces and the explainer
+never names, so a negative superscript reads as a bug. Any future change to
+`TitleTex` has to keep that special case.
+
+## Layout
+
+Two rules that are easy to break without noticing.
+
+**Media-query overrides must follow the rule they override.** The single-column
+override for `.lattice-panel` sat above the base rule, at equal specificity, so
+`position: sticky` won at every width and the override was dead from the day it
+was written. There is no ordering convention enforcing this — check source order
+whenever a responsive override appears not to apply.
+
+**Grid and flex items default to `min-width: auto`** and so refuse to shrink
+below a non-wrapping descendant, pushing the whole page sideways rather than
+scrolling the child. `.sim-side` and `.control-group` set `min-width: 0` for
+exactly this reason.
+
 ## The canvas
 
 `phComplex3d.js` owns the camera and caches the pushed geometry, unlike
@@ -117,21 +148,47 @@ at **solid** fill there are four rows and β = (1, 1, 0, 0). The trailing β₃ 
 honest — it is a real Betti number, and its row shows `rank ∂₃ = 1` killing the
 tetrahedron's cavity — but it means the summary caption cannot be the fixed
 string "pieces, loops, cavities": at frame fill there are two entries and at
-solid there are four. It is generated per entry, with the symbol standing in
-above dimension 2, where there is no everyday word for what β counts.
+solid there are four. It is generated per entry.
 
-Under that sits the Euler characteristic written twice — the simplex counts
-alternating, then the Betti numbers alternating — because the equality is far
-more convincing when both sides move under the fill-level control and keep
-agreeing than when it is asserted. Both sums run to the complex's top populated
-dimension, so they always have the same number of terms and can be read off
-against each other; that also stops the frame level trailing a meaningless
-`+ 0 − 0`. The line is `white-space: nowrap` inside its own scroll container,
-which is why `.sim-side` and `.control-group` carry `min-width: 0` — without it
-a grid or flex item refuses to shrink below a non-wrapping child and the whole
-page scrolls sideways on a phone instead of the line scrolling inside itself.
+**β₃ is always zero here, structurally.** Nothing above the tetrahedra can
+cancel a 3-chain, so β₃ = dim ker ∂₃, and a non-zero element of that kernel
+would be a solid lump of tetrahedra whose surface cancels away completely. No
+arrangement of solids in ordinary space does that. It takes something that does
+not embed in three dimensions — the boundary of a 4-simplex, five tetrahedra
+glued into a 3-sphere — to get β₃ = 1. The entry is kept anyway, because χ's
+alternating sum uses it and because dropping a row the table shows would be
+worse, but it is captioned `β₃ (3D voids)` so a permanent zero does not look
+like a defect. That names it by the dimension of the class, matching the
+explainer's "β_k counts k-dimensional holes"; the competing convention names the
+enclosed region instead, under which "3D void" would mean β₂.
+
+## The χ identity block
+
+Under the Betti summary, the Euler characteristic is written twice over — the
+simplex counts alternating, then the Betti numbers alternating, then the value
+they agree on. Both sides moving under the fill-level control and staying equal
+argues the identity better than asserting it once.
+
+Both sums run to the complex's top populated dimension, so they always have the
+same number of terms, can be read off against each other, and the frame level
+does not trail a meaningless `+ 0 − 0`. `.euler-identity` is a three-column grid
+— symbol, equals, sum — so the equals signs form their own column and the two
+sums sit digit above digit; monospace and `tabular-nums` are load-bearing for
+that alignment, not decoration. The value uses a typographic minus (U+2212) to
+match the one separating the terms, as does the χ readout beside the simplex
+counts.
+
+Each sum is `white-space: nowrap` inside a scroll container, which is why
+`.sim-side` and `.control-group` carry `min-width: 0`. Without it a grid or flex
+item refuses to shrink below a non-wrapping child, and the page scrolls sideways
+on a phone instead of the sum scrolling inside itself.
 
 ## Verifying changes
+
+```sh
+dotnet test                                     # topology tests (Core only)
+dotnet run --project src/PersistentHomologyWeb  # dev server, IL-interpreted and slow
+```
 
 There is no automated test for the Web layer — `PersistentHomologyCore.Tests`
 covers the topology only, and the presets' expected values are worth restating
@@ -152,3 +209,11 @@ fingerprinted asset names from a manifest; rebuilding underneath a live server
 leaves it advertising `dotnet.<oldhash>.js`, and the page dies with
 `Failed to start platform … Failed to fetch dynamically imported module` plus a
 404. The symptom looks like a code error and is not one.
+
+**Do not judge layout from a full-page screenshot.** `.lattice-panel` is sticky
+above 900px, and a stuck element is composited into every stitched segment of a
+full-page capture — which renders as the controls overlapping the canvas with a
+tall blank gap above them, on a page that is in fact laid out correctly. Capture
+viewport-sized shots at successive scroll offsets instead, or measure geometry
+directly with `getBoundingClientRect`. Chasing that phantom is what turned up
+the dead media query above, but it wasted a pass first.
