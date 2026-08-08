@@ -142,14 +142,30 @@
                         </tbody>
                     </table>
                 </div>
-                <span class="control-hint">@BettiSummary()</span>
+                <div class="betti-summary">
+                    <span class="betti-summary-value">β = (@BettiList())</span>
+                    <span class="betti-summary-note">pieces, loops, cavities</span>
+                </div>
+            </div>
+
+            @* Degree 0 lives here rather than in the strip: it is the zero map
+               at every preset and fill level, so it never rewards a glance,
+               and parking it in the panel's spare vertical space lets the
+               matrices that do change line up in a single row. *@
+            <div class="control-group">
+                <BoundaryMatrix Matrix="State.Displayed(0)"
+                                Rows="State.DisplayedRows(0)"
+                                Columns="State.DisplayedColumns(0)"
+                                Degree="0"
+                                Transposed="State.Transposed"
+                                Compact="true" />
             </div>
         </aside>
     </div>
 </div>
 
 <div class="matrix-strip">
-    @for (int degree = 0; degree <= State.HighestDisplayedDegree; degree++)
+    @for (int degree = 1; degree <= State.HighestDisplayedDegree; degree++)
     {
         int k = degree;
         <BoundaryMatrix Matrix="State.Displayed(k)"
@@ -357,11 +373,7 @@ else
             State.RelatedIndices);
     }
 
-    private string BettiSummary()
-    {
-        var parts = State.Homology.Select(info => info.Betti.ToString());
-        return $"β = ({string.Join(", ", parts)}) — pieces, loops, cavities.";
-    }
+    private string BettiList() => string.Join(", ", State.Homology.Select(info => info.Betti));
 
     private static string DimensionName(int dimension) => dimension switch
     {

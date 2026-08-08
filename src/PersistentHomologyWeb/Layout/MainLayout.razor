@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Navigation
 
 <div class="app-shell">
     <header class="app-header">
@@ -9,10 +11,13 @@
                target="_blank" rel="noopener">by Francisco Kim</a>
         </div>
         <nav class="app-nav">
-            @* Only the two interactive tabs. Each one's explanation is a
-               standalone page it links out to in a new browser tab. *@
             <NavLink href="" Match="NavLinkMatch.All">Simulator</NavLink>
             <NavLink href="boundary">Boundary operators</NavLink>
+            @* Follows whichever tab you are on, and opens in a new browser tab
+               so the maths sits beside the thing it describes. *@
+            <a class="app-nav-out" href="@ExplanationHref" target="_blank" rel="noopener">
+                Explanation
+            </a>
         </nav>
     </header>
 
@@ -26,3 +31,20 @@
         <a href="https://github.com/francisco-kim/PersistentHomologyVisualisation" target="_blank" rel="noopener">Source</a>
     </footer>
 </div>
+
+@code {
+    // The layout outlives page navigation, so the nav link has to be told when
+    // the route changed or it would keep pointing at the previous tab's
+    // explanation.
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => StateHasChanged();
+
+    private string ExplanationHref => InBoundarySection ? "boundary/explainer" : "explainer";
+
+    private bool InBoundarySection =>
+        Navigation.ToBaseRelativePath(Navigation.Uri)
+                  .StartsWith("boundary", StringComparison.OrdinalIgnoreCase);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

@@ -121,6 +121,14 @@ html, body {
     font-weight: 600;
 }
 
+/* Leaves the app rather than switching tab within it, so it is marked and
+   never picks up the active state. */
+.app-nav-out::after {
+    content: " ↗";
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
 .app-footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -383,7 +391,12 @@ input[type="number"] {
 .chart-title .katex,
 .page-intro .katex,
 .explainer p .katex,
-.explainer li .katex {
+.explainer li .katex,
+.explainer h2 .katex,
+.matrix-figure figcaption .katex,
+.matrix-title .katex,
+.betti-table .katex,
+.check-label .katex {
     font-size: 1em;
 }
 
@@ -634,7 +647,9 @@ input[type="number"] {
     flex-wrap: wrap;
     gap: 1rem;
     margin-top: 1.25rem;
-    align-items: start;
+    /* Equal-height cards: the matrices have different row counts, and ragged
+       card bottoms read as misalignment rather than as information. */
+    align-items: stretch;
 }
 
 .matrix-card {
@@ -645,6 +660,23 @@ input[type="number"] {
     flex: 0 1 auto;
     min-width: 0;
     max-width: 100%;
+}
+
+/* Degree 0 shown inside the controls panel: no nested card chrome. */
+.matrix-card-compact {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+.matrix-card-compact .matrix-heading {
+    margin-bottom: 0.4rem;
+}
+
+.matrix-card-compact .matrix-empty {
+    max-width: none;
+    font-size: 0.78rem;
 }
 
 .matrix-heading {
@@ -755,12 +787,59 @@ input[type="number"] {
     font-weight: 700;
 }
 
+/* The headline number the whole table exists to produce. */
+.betti-summary {
+    margin-top: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.betti-summary-value {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+}
+
+.betti-summary-note {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.matrix-figure-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin: 0.9rem 0;
+    align-items: start;
+}
+
 .matrix-figure {
-    overflow-x: auto;
+    margin: 0;
     background: var(--page);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 0.8rem 1rem;
+    padding: 0.7rem 0.9rem;
+}
+
+/* The caption is the only part that is real maths; the grid stays monospace
+   so the columns line up. */
+.matrix-figure figcaption {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.matrix-figure pre {
+    margin: 0;
+    overflow-x: auto;
     font-size: 0.78rem;
     line-height: 1.45;
     color: var(--text-secondary);

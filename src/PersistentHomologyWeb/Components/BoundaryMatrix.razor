@@ -3,7 +3,7 @@
 @* One boundary (or coboundary) matrix as a table. Rows and columns are labelled
    by the simplices they stand for, so selecting a header is selecting a simplex. *@
 
-<div class="matrix-card">
+<div class="matrix-card @(Compact ? "matrix-card-compact" : "")">
     <div class="matrix-heading">
         <span class="matrix-title" data-katex="@TitleTex"></span>
         <span class="matrix-shape">@Rows.Count &times; @Columns.Count</span>
@@ -65,6 +65,9 @@
     [Parameter, EditorRequired] public int Degree { get; set; }
 
     [Parameter] public bool Transposed { get; set; }
+
+    /// <summary>Drops the card chrome, for degrees shown inside another panel.</summary>
+    [Parameter] public bool Compact { get; set; }
     [Parameter] public (int Dimension, int Index)? Selection { get; set; }
     [Parameter] public int RelatedDimension { get; set; } = -1;
     [Parameter] public IReadOnlyList<int> RelatedIndices { get; set; } = [];
