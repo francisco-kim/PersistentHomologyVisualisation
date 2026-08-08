@@ -82,8 +82,16 @@
 
     // Transposing d_k gives delta^(k-1): the operator maps up a dimension
     // instead of down, so the label drops by one.
+    //
+    // Except at degree 0, where that would read delta^(-1). The formula is
+    // consistent there - delta^k = d_(k+1)^T at k = -1 - but C^(-1) is a group
+    // this app never introduces and the explainer never names, so a negative
+    // superscript reads as a bug rather than as a convention. Degree 0 is
+    // labelled by the transpose alone.
     private string TitleTex => Transposed
-        ? $"\\delta^{{{Degree - 1}}} = \\partial_{{{Degree}}}^{{\\top}}"
+        ? Degree == 0
+            ? "\\partial_{0}^{\\top}"
+            : $"\\delta^{{{Degree - 1}}} = \\partial_{{{Degree}}}^{{\\top}}"
         : $"\\partial_{{{Degree}}}";
 
     private int RowDimension => Transposed ? Degree : Degree - 1;
