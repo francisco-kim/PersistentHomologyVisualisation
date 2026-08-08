@@ -595,7 +595,17 @@ input[type="number"] {
 .ph-canvas-3d {
     aspect-ratio: 640 / 460;
     cursor: grab;
+    /* Drags rotate the model; without this the browser claims them for
+       scrolling and the shape never moves on a touch screen. */
     touch-action: none;
+}
+
+/* On a phone the panel is full-width but short, so a 640:460 box leaves the
+   complex barely 200px tall. Trade some width for height. */
+@media (max-width: 700px) {
+    .ph-canvas-3d {
+        aspect-ratio: 1 / 1;
+    }
 }
 
 .ph-canvas-3d:active {
@@ -756,6 +766,29 @@ input[type="number"] {
 .matrix-header-related:hover {
     background: var(--series-1);
     color: var(--accent-ink);
+}
+
+/* Touch targets. Matrix headers are the primary control on this page and a
+   26px row is a poor target for a finger, so give them room where the pointer
+   is coarse - without loosening the grid for mouse users, who can aim. */
+@media (pointer: coarse) {
+    .matrix-table th,
+    .matrix-table td {
+        padding: 0.45rem 0.5rem;
+    }
+
+    .segmented-option {
+        padding: 0.6rem 0.5rem;
+    }
+
+    .controls input[type="checkbox"] {
+        width: 1.15rem;
+        height: 1.15rem;
+    }
+
+    .check-label {
+        padding: 0.2rem 0;
+    }
 }
 
 .matrix-zero {

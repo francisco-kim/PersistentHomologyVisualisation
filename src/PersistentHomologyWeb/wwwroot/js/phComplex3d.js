@@ -11,13 +11,41 @@ const scenes = new Map();
 // perspective divide reads as depth without distorting a 5-vertex complex.
 const CAMERA_DISTANCE = 4.2;
 
+// Hit radii in CSS pixels. The backing store is sized to the element (see
+// resize), so drawing and hit-testing share one coordinate system and these
+// mean the same thing on every screen.
 const VERTEX_HIT_RADIUS = 11;
 const CENTRE_HIT_RADIUS = 11;
 const EDGE_HIT_RADIUS = 8;
 
+// Fingers are blunter than cursors and there is no hover to aim with first.
+// Kept modest on purpose: every pixel given to vertices and edges is taken
+// from the face interiors, which are the only way to select a triangle.
+const COARSE_POINTER_BOOST = 1.35;
+
 function cssVar(name, fallback) {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return value || fallback;
+}
+
+// Matches the backing store to the element's own size in device pixels, then
+// scales the context so every drawing and hit-testing coordinate is a CSS
+// pixel. A fixed backing store would be blurry on a high-DPI screen and, worse,
+// would make canvas pixels and CSS pixels differ by a factor of two or more on
+// a phone - which silently shrinks every touch target.
+function resize(scene) {
+  const canvas = scene.ctx.canvas;
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  const cssWidth = rect.width || scene.fallbackWidth;
+  const cssHeight = rect.height || scene.fallbackHeight;
+
+  scene.cssWidth = cssWidth;
+  scene.cssHeight = cssHeight;
+  canvas.width = Math.round(cssWidth * dpr);
+  canvas.height = Math.round(cssHeight * dpr);
+  scene.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 export function initCanvas(id, width, height) {
@@ -25,12 +53,18 @@ export function initCanvas(id, width, height) {
   if (!canvas) {
     return;
   }
-  canvas.width = width;
-  canvas.height = height;
 
   const existing = scenes.get(id);
-  scenes.set(id, {
+  existing?.observer?.disconnect();
+
+  const scene = {
     ctx: canvas.getContext('2d'),
+    // Only used if the element has not been laid out yet; CSS owns the shape.
+    fallbackWidth: width,
+    fallbackHeight: height,
+    cssWidth: width,
+    cssHeight: height,
+    observer: null,
     verts: new Float64Array(0),
     edges: new Int32Array(0),
     tris: new Int32Array(0),
@@ -47,7 +81,19 @@ export function initCanvas(id, width, height) {
     projected: [],
     dotNetRef: null,
     handlers: null
-  });
+  };
+  scenes.set(id, scene);
+  resize(scene);
+
+  // Rotation, orientation change, or the layout collapsing to one column all
+  // change the element's size without any call from C#.
+  if (typeof ResizeObserver !== 'undefined') {
+    scene.observer = new ResizeObserver(() => {
+      resize(scene);
+      render(scene);
+    });
+    scene.observer.observe(canvas);
+  }
 }
 
 export function getClientSize(id) {
@@ -86,9 +132,8 @@ export function setHighlight(id, selectedDimension, selectedIndex, relatedDimens
 function project(scene) {
   const verts = scene.verts;
   const count = verts.length / 3;
-  const ctx = scene.ctx;
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
+  const width = scene.cssWidth;
+  const height = scene.cssHeight;
 
   // Centre on the model's own centroid rather than the origin: a preset with
   // a limb sticking out (the open triangle's apex) is not symmetric about the
@@ -169,7 +214,7 @@ function tetrahedronCentre(points, quad, index) {
 function render(scene) {
   const ctx = scene.ctx;
   const points = project(scene);
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.clearRect(0, 0, scene.cssWidth, scene.cssHeight);
   if (points.length === 0) {
     return;
   }
@@ -331,14 +376,18 @@ function pointInTriangle(px, py, a, b, c) {
 // Highest dimension the pointer is plausibly on, cheapest test first. Vertices
 // and tetrahedron markers win over edges, which win over faces, because the
 // smaller target is the harder one to hit deliberately.
-function pick(scene, px, py) {
+function pick(scene, px, py, pointerBoost) {
   const points = scene.projected;
   if (!points || points.length === 0) {
     return null;
   }
 
+  const vertexRadius = VERTEX_HIT_RADIUS * pointerBoost;
+  const centreRadius = CENTRE_HIT_RADIUS * pointerBoost;
+  const edgeRadius = EDGE_HIT_RADIUS * pointerBoost;
+
   let best = null;
-  let bestDistance = VERTEX_HIT_RADIUS;
+  let bestDistance = vertexRadius;
   for (let i = 0; i < points.length; i++) {
     const d = Math.hypot(px - points[i].x, py - points[i].y);
     if (d <= bestDistance) {
@@ -350,7 +399,7 @@ function pick(scene, px, py) {
     return best;
   }
 
-  bestDistance = CENTRE_HIT_RADIUS;
+  bestDistance = centreRadius;
   for (let t = 0; t < scene.tets.length / 4; t++) {
     const centre = tetrahedronCentre(points, scene.tets, t);
     const d = Math.hypot(px - centre.x, py - centre.y);
@@ -363,7 +412,7 @@ function pick(scene, px, py) {
     return best;
   }
 
-  bestDistance = EDGE_HIT_RADIUS;
+  bestDistance = edgeRadius;
   for (let e = 0; e < scene.edges.length / 2; e++) {
     const a = points[scene.edges[2 * e]];
     const b = points[scene.edges[2 * e + 1]];
@@ -407,13 +456,11 @@ export function attachPicker(id, dotNetRef) {
   let lastX = 0;
   let lastY = 0;
 
+  // The context is scaled by the device pixel ratio, so drawn coordinates are
+  // CSS pixels and pointer coordinates need no conversion beyond the offset.
   const toCanvas = (event) => {
     const rect = canvas.getBoundingClientRect();
-    const scale = rect.width > 0 ? canvas.width / rect.width : 1;
-    return {
-      x: (event.clientX - rect.left) * scale,
-      y: (event.clientY - rect.top) * scale
-    };
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
 
   const onPointerDown = (event) => {
@@ -430,7 +477,10 @@ export function attachPicker(id, dotNetRef) {
     }
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
-    if (Math.abs(dx) + Math.abs(dy) > 2) {
+    // A finger wobbles on the way down far more than a mouse does; too tight a
+    // threshold turns every tap into a rotation and nothing is ever selected.
+    const dragThreshold = event.pointerType === 'mouse' ? 2 : 8;
+    if (Math.abs(dx) + Math.abs(dy) > dragThreshold) {
       moved = true;
     }
     lastX = event.clientX;
@@ -455,7 +505,8 @@ export function attachPicker(id, dotNetRef) {
       return;
     }
     const { x, y } = toCanvas(event);
-    const hit = pick(scene, x, y);
+    const coarse = event.pointerType !== 'mouse';
+    const hit = pick(scene, x, y, coarse ? COARSE_POINTER_BOOST : 1);
     scene.dotNetRef.invokeMethodAsync('OnSimplexPicked', hit ? hit.dimension : -1, hit ? hit.index : -1);
   };
 
@@ -480,6 +531,8 @@ export function detachPicker(id) {
   }
   scene.handlers = null;
   scene.dotNetRef = null;
+  scene.observer?.disconnect();
+  scene.observer = null;
 }
 
 // Re-renders every live scene, e.g. after a colour-scheme change, since all
