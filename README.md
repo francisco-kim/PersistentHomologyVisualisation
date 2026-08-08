@@ -50,6 +50,10 @@ $\mathbb{Z}$ with signs rather than over $\mathbb{Z}/2$.
 - A live **rank / nullity / Betti** readout, and a panel expanding
   $\partial(\partial\sigma) = 0$ term by term with the cancelling pairs
   colour-matched.
+- The **Euler characteristic** shown both ways at once —
+  $\chi = \sum_k (-1)^k n_k = \sum_k (-1)^k \beta_k$ — so the alternating
+  simplex count and the alternating hole count visibly stay equal as the fill
+  level moves.
 
 The rendering is hand-rolled canvas 2D — weak-perspective projection, depth-
 ordered picking and drag rotation — so the tab adds no dependency. Its

@@ -38,7 +38,7 @@
                 <span class="readout-label">tetrahedra</span>
                 <span class="readout-value">@State.Complex.Count(3)</span>
             </div>
-            <div class="readout">
+            <div class="readout" title="Euler characteristic: the counts to the left, alternating. It also equals the Betti numbers alternating — see the panel beside the rank table.">
                 <span class="readout-label">χ</span>
                 <span class="readout-value">@State.Complex.EulerCharacteristic</span>
             </div>
@@ -145,6 +145,17 @@
                 <div class="betti-summary">
                     <span class="betti-summary-value">β = (@BettiList())</span>
                     <span class="betti-summary-note">@BettiNote()</span>
+
+                    @* The same number counted twice over: once off the simplices,
+                       once off the holes. Shown live because the equality is far
+                       more convincing when both sides move under the fill-level
+                       control and keep agreeing. *@
+                    <span class="betti-summary-euler">
+                        χ = @EulerFromCounts() = @EulerFromBetti() = @State.Complex.EulerCharacteristic
+                    </span>
+                    <span class="betti-summary-note">
+                        simplices alternating, then Betti numbers alternating — always equal
+                    </span>
                 </div>
             </div>
 
@@ -264,9 +275,9 @@ else
     <span class="explainer-link-label">Read the explanation</span>
     <span class="explainer-link-text">
         Chains and orientation, the alternating-sign boundary formula, why
-        &#8706;<sub>0</sub> is empty, &#8706;&#8728;&#8706; = 0, Betti numbers as ranks, and
-        what transposing the matrices means &mdash; the coboundary, the discrete
-        gradient, and cohomology.
+        &#8706;<sub>0</sub> is empty, &#8706;&#8728;&#8706; = 0, Betti numbers as ranks,
+        &chi; counted two ways, and what transposing the matrices means &mdash;
+        the coboundary, the discrete gradient, and cohomology.
     </span>
     <span class="explainer-link-hint">Opens in a new tab</span>
 </a>
@@ -412,6 +423,19 @@ else
     private string Sign(int sign) => Mod2 ? "+" : sign > 0 ? "+" : "−";
 
     private string BettiList() => string.Join(", ", State.Homology.Select(info => info.Betti));
+
+    // Both sides of chi run to the complex's top populated dimension, so the two
+    // sums always have the same number of terms and can be read off against each
+    // other. Stopping there rather than always writing four terms keeps the
+    // frame level from trailing a meaningless "+ 0 - 0".
+    private string EulerFromCounts() => AlternatingSum(
+        Enumerable.Range(0, State.Complex.MaxDimension + 1).Select(State.Complex.Count));
+
+    private string EulerFromBetti() => AlternatingSum(State.Homology.Select(info => info.Betti));
+
+    private static string AlternatingSum(IEnumerable<int> terms) =>
+        string.Concat(terms.Select((value, k) =>
+            k == 0 ? value.ToString() : (k % 2 == 1 ? " − " : " + ") + value));
 
     // Named per entry rather than as a fixed "pieces, loops, cavities": the
     // number of Betti numbers follows the fill level (two at frame, four at

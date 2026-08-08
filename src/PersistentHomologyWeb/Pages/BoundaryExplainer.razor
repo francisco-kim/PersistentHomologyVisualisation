@@ -8,8 +8,8 @@
     alternating-sign boundary formula, why
     <span data-katex="\partial_0"></span> is empty,
     <span data-katex="\partial \circ \partial = 0"></span>, Betti numbers as
-    ranks, and what transposing the matrices means — the coboundary, the
-    discrete gradient, and cohomology.
+    ranks, the Euler characteristic counted two ways, and what transposing the
+    matrices means — the coboundary, the discrete gradient, and cohomology.
 </p>
 
 <section class="explainer">
@@ -167,6 +167,58 @@
         <em>solid</em>, sitting next to a cavity that does not. It is the
         difference between a hole that gets filled and a hole that stays open,
         visible in the same picture.
+    </p>
+
+    <h2>The Euler characteristic</h2>
+    <p>
+        The <span data-katex="\chi"></span> in the tab's readout row is the one
+        number there that is not a count. It is the counts, alternating —
+        vertices minus edges plus triangles minus tetrahedra:
+    </p>
+    <div data-katex="\chi \;=\; \sum_{k} (-1)^k n_k \;=\; V - E + F - T" data-katex-display></div>
+    <p>
+        For the hollow <strong>tetrahedron</strong> at <em>surface</em> that is
+        <span data-katex="4 - 6 + 4 = 2"></span> — the schoolbook
+        <span data-katex="V - E + F = 2"></span> for a shape that is a sphere.
+        Fill it in and the single tetrahedron drops it to
+        <span data-katex="4 - 6 + 4 - 1 = 1"></span>.
+    </p>
+    <p>
+        Now count the same shapes by their holes instead. The remarkable part is
+        that you get the same number:
+    </p>
+    <div data-katex="\chi \;=\; \sum_{k} (-1)^k n_k \;=\; \sum_{k} (-1)^k \beta_k \;=\; \beta_0 - \beta_1 + \beta_2 - \beta_3"
+         data-katex-display></div>
+    <p>
+        The hollow tetrahedron has one piece and one cavity and no loops, so
+        <span data-katex="1 - 0 + 1 = 2"></span>. Solid, the cavity is gone and
+        it is <span data-katex="1 - 0 + 0 - 0 = 1"></span>. Both agree with the
+        counts above, and the tab shows the two sums side by side under the rank
+        table so you can watch them move together as the fill level changes.
+    </p>
+    <p>
+        The identity falls straight out of
+        <span data-katex="\beta_k = n_k - \operatorname{rank}\partial_k - \operatorname{rank}\partial_{k+1}"></span>
+        from the section above. Substitute it into the alternating sum and each
+        <span data-katex="\operatorname{rank}\partial_k"></span> appears twice —
+        once from the <span data-katex="\beta_k"></span> term and once from
+        <span data-katex="\beta_{k-1}"></span> — with opposite signs. Every one
+        of them cancels except <span data-katex="\operatorname{rank}\partial_0"></span>,
+        which has no partner below it and is zero anyway, because
+        <span data-katex="\partial_0"></span> is the zero map. Only the
+        <span data-katex="n_k"></span> survive. It is the same
+        cancellation-in-pairs argument as
+        <span data-katex="\partial \circ \partial = 0"></span>, one level up.
+    </p>
+    <p>
+        That is worth more than an identity. The left-hand side needs no algebra
+        at all — count simplices, alternate the signs, stop. The right-hand side
+        is a statement about holes, which does not change if you bend the shape,
+        subdivide it, or triangulate it some completely different way. So the
+        count cannot change either. <span data-katex="\chi"></span> was the first
+        topological invariant anyone found, and it is homology's shadow: the
+        alternating sum is all of the Betti numbers that survives being collapsed
+        into a single integer.
     </p>
 
     <h2>Transposing: the coboundary</h2>

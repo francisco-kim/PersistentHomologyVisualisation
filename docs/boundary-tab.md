@@ -120,6 +120,17 @@ string "pieces, loops, cavities": at frame fill there are two entries and at
 solid there are four. It is generated per entry, with the symbol standing in
 above dimension 2, where there is no everyday word for what β counts.
 
+Under that sits the Euler characteristic written twice — the simplex counts
+alternating, then the Betti numbers alternating — because the equality is far
+more convincing when both sides move under the fill-level control and keep
+agreeing than when it is asserted. Both sums run to the complex's top populated
+dimension, so they always have the same number of terms and can be read off
+against each other; that also stops the frame level trailing a meaningless
+`+ 0 − 0`. The line is `white-space: nowrap` inside its own scroll container,
+which is why `.sim-side` and `.control-group` carry `min-width: 0` — without it
+a grid or flex item refuses to shrink below a non-wrapping child and the whole
+page scrolls sideways on a phone instead of the line scrolling inside itself.
+
 ## Verifying changes
 
 There is no automated test for the Web layer — `PersistentHomologyCore.Tests`

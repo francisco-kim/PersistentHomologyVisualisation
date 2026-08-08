@@ -181,6 +181,10 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    /* Grid and flex items default to min-width: auto, so a single non-wrapping
+       descendant - the chi identity - would otherwise refuse to shrink and push
+       the whole page sideways on a phone instead of scrolling inside itself. */
+    min-width: 0;
 }
 
 .lattice-panel {
@@ -265,6 +269,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    min-width: 0;
 }
 
 .control-buttons {
@@ -843,6 +848,22 @@ input[type="number"] {
     margin-top: 0.1rem;
     font-size: 0.78rem;
     color: var(--text-muted);
+}
+
+/* The chi identity. Monospaced and tabular so the two alternating sums line up
+   as sums rather than as prose, and ruled off because it is a second reading of
+   the same block's numbers rather than more of the first. */
+.betti-summary-euler {
+    display: block;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .matrix-figure-row {
