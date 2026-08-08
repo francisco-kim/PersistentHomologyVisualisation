@@ -52,12 +52,28 @@ $\mathbb{Z}$ with signs rather than over $\mathbb{Z}/2$.
   colour-matched.
 
 The rendering is hand-rolled canvas 2D — projection, painter's-algorithm face
-sorting and drag rotation — so the tab adds no dependency.
+sorting and drag rotation — so the tab adds no dependency. Its explanation
+lives at
+[`/boundary/explainer`](https://francisco-kim.github.io/PersistentHomologyVisualisation/boundary/explainer):
+chains and orientation, the alternating-sign formula, why $\partial_0$ is
+empty, $\partial \circ \partial = 0$, Betti numbers as ranks, and the
+coboundary — including $\delta^0$ as a discrete gradient, where
+$(\delta^0 f)([ab]) = f(b) - f(a)$ makes $H^0 \cong H_0$ concrete.
+
+## Layout
+
+The app has two interactive tabs, and each links out to its own explanation
+page — opened in a new browser tab, so the maths sits beside the thing it
+describes rather than pushing it off the screen:
+
+| Tab | Explanation |
+| --- | --- |
+| [`/`](https://francisco-kim.github.io/PersistentHomologyVisualisation/) — simulator | [`/explainer`](https://francisco-kim.github.io/PersistentHomologyVisualisation/explainer) |
+| [`/boundary`](https://francisco-kim.github.io/PersistentHomologyVisualisation/boundary) — boundary operators | [`/boundary/explainer`](https://francisco-kim.github.io/PersistentHomologyVisualisation/boundary/explainer) |
 
 ## Topology
 
-See the in-app explainer (below the simulation, and in full at
-[`/explainer`](https://francisco-kim.github.io/PersistentHomologyVisualisation/explainer))
+See [`/explainer`](https://francisco-kim.github.io/PersistentHomologyVisualisation/explainer)
 for the conceptual walkthrough: the Vietoris–Rips complex, the filtration,
 homology and Betti numbers, and the persistence diagram's stability
 guarantee. What follows here is the numerical computation behind it.

@@ -115,93 +115,16 @@
                   Hovered="Runner.HoveredPair" OnHover="OnBarHover" OnEpsilonChange="OnBarcodeEpsilonChange" />
 </div>
 
-<section class="explainer">
-    <h2>What is this?</h2>
-    <p>
-        Sample some points off a shape — say, a wobbly circle. Around every
-        point, grow a disc of radius <span data-katex="\varepsilon/2"></span>.
-        For small <span data-katex="\varepsilon"></span> the discs are tiny
-        and disjoint: just confetti. Make <span data-katex="\varepsilon"></span>
-        huge and everything overlaps into one blob. Somewhere in between, the
-        discs merge into a ring with an empty middle — the circle's hole is
-        unmistakable. <strong>Persistent homology is the bookkeeping of that
-        movie</strong>: which pieces and holes exist at which radius, and how
-        long each one survives.
-    </p>
-
-    <h2>Growing balls: the Vietoris–Rips complex</h2>
-    <p>
-        At radius <span data-katex="\varepsilon"></span>, connect two points
-        with an edge whenever their discs touch, and fill in a triangle
-        whenever three points are all mutually close. Formally, this is the
-        <strong>Vietoris–Rips complex</strong>:
-    </p>
-    <div data-katex="\mathrm{VR}_\varepsilon(X) \;=\; \{\,\sigma \subseteq X \;:\; \operatorname{diam}(\sigma) \le \varepsilon\,\}"
-         data-katex-display></div>
-    <p>
-        every subset of points whose diameter — its largest pairwise distance
-        — is at most <span data-katex="\varepsilon"></span> becomes a simplex.
-        This app builds it up to triangles (dimension 2), which is all that's
-        needed to see pieces and loops. As <span data-katex="\varepsilon"></span>
-        grows this graph only ever gains edges and triangles, never loses
-        them — that nested sequence of complexes is what the ε slider walks
-        through.
-    </p>
-
-    <h2>Counting pieces and holes: homology</h2>
-    <p>
-        Homology makes "pieces" and "holes" precise. A connected piece is a
-        <strong>Betti number</strong> <span data-katex="\beta_0"></span>; an
-        independent loop — an edge-path that closes up but isn't the
-        boundary of any triangle in the complex — is
-        <span data-katex="\beta_1"></span>, a <strong>one-dimensional
-        hole</strong> (a two-dimensional hole — a hollow cavity enclosed by
-        surfaces rather than edges, like the inside of a football — would be
-        <span data-katex="\beta_2"></span>; a torus, the surface of a
-        doughnut, has <span data-katex="\beta_0=1"></span>,
-        <span data-katex="\beta_1=2"></span> — one loop round the tube, one
-        round the central hole — and <span data-katex="\beta_2=1"></span> for
-        the cavity its surface encloses. This app only builds up to
-        triangles, so it only ever finds <span data-katex="\beta_0"></span>
-        and <span data-katex="\beta_1"></span>). Every time two pieces merge,
-        <span data-katex="\beta_0"></span> drops by one; every time a triangle
-        fills in a loop, <span data-katex="\beta_1"></span> drops by one.
-        <span data-katex="\beta_0"></span> and <span data-katex="\beta_1"></span>
-        are exactly what the "pieces" and "holes" readouts above show at the
-        current <span data-katex="\varepsilon"></span>.
-    </p>
-
-    <h2>How to read the barcode</h2>
-    <p>
-        Every bar is one feature: a connected piece
-        (<span data-katex="H_0"></span>) or a
-        one-dimensional hole — a loop (<span data-katex="H_1"></span>). A bar
-        spans exactly the range of <span data-katex="\varepsilon"></span>
-        where that feature exists — it appears at its <em>birth</em> radius
-        and disappears at its <em>death</em> radius, where it merges into a
-        bigger piece or gets filled in by triangles.
-        <strong>Short bars are noise; long bars are real shape.</strong> The
-        vertical sweep line is "now" — wherever the ε slider currently sits.
-        Hover a bar to see exactly which piece or hole it is, traced directly
-        on the point cloud.
-    </p>
-
-    <h2>The persistence diagram</h2>
-    <p>
-        Tick <strong>Persistence diagram</strong> to see the same births and
-        deaths plotted as points instead of bars: birth on one axis, death on
-        the other. A point's distance from the diagonal is its lifetime —
-        points hugging the diagonal are the short, noisy bars; points far
-        above it are the long, real ones.
-    </p>
-    <p class="control-hint">
-        That's the short version. For the filtration in full, why this app
-        computes over <span data-katex="\mathbb{Z}/2"></span>, the
-        boundary-matrix pairing algorithm, and the persistence diagram's
-        stability guarantee, see the
-        <a href="explainer">detailed explanation</a>.
-    </p>
-</section>
+<a class="explainer-link" href="explainer" target="_blank" rel="noopener">
+    <span class="explainer-link-label">Read the explanation</span>
+    <span class="explainer-link-text">
+        What persistent homology is, the Vietoris&ndash;Rips complex, the
+        filtration, homology and Betti numbers, why this app computes over
+        &#8484;/2, the boundary-matrix pairing algorithm, and the persistence
+        diagram&rsquo;s stability guarantee.
+    </span>
+    <span class="explainer-link-hint">Opens in a new tab</span>
+</a>
 
 @code {
     private const string ComplexCanvasId = "ph-complex";

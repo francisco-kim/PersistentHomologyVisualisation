@@ -476,6 +476,53 @@ input[type="number"] {
     stroke-width: 2.5;
 }
 
+/* ---------- link out to a standalone explanation page ---------- */
+
+.explainer-link {
+    display: block;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.4rem;
+    margin-top: 1.25rem;
+    max-width: 62rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.explainer-link:hover {
+    border-color: var(--accent);
+    background: var(--grid-line);
+}
+
+.explainer-link-label {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+}
+
+.explainer-link:hover .explainer-link-label {
+    color: var(--accent);
+}
+
+.explainer-link-text {
+    display: block;
+    color: var(--text-secondary);
+}
+
+.explainer-link-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.explainer-link-hint::after {
+    content: " ↗";
+}
+
 /* ---------- explainer ---------- */
 
 .explainer {
