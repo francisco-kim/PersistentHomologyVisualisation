@@ -11,7 +11,14 @@
     --series-2: #1baf7a;
     --series-3: #eda100;
     --series-8: #eb6834;
-    --accent: #2a78d6;
+    /* A shade darker than --series-1, which it otherwise matches. The accent
+       has to carry small text and has to sit under white ink, and at the
+       series blue it cleared neither: 4.30:1 as text on the panel and 4.42:1
+       behind white, against the 4.5 wanted at those sizes. Here both clear it,
+       4.60 and 4.72, at a difference nobody looking at one of them will see.
+       The series colours are left alone - they mark points and strokes, which
+       are held to 3:1, and they have to stay distinguishable from each other. */
+    --accent: #2673d0;
     --accent-ink: #ffffff;
 }
 
@@ -987,9 +994,23 @@ input[type="number"] {
     color: var(--text-muted);
 }
 
+/* Wears the accent the Betti numbers wear in the panel opposite, so the sum
+   points at where its terms came from. Only the one sum is tinted: the other
+   is read off the counts a few pixels to its left, which are plain text, so
+   leaving it plain is itself the match. The note below still says which is
+   which in words - colour is a second channel here, never the only one.
+
+   This is the smallest text the accent is asked to carry anywhere, and what
+   set the shade the token settled on. */
+.euler-sum-betti {
+    color: var(--accent);
+}
+
+/* Plain rather than accented, now that the accent means "these are the Betti
+   numbers" one term earlier on the same line. Weight alone marks the answer. */
 .euler-total {
     font-weight: 700;
-    color: var(--accent);
+    color: var(--text-primary);
 }
 
 .matrix-figure-row {
