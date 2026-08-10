@@ -11,6 +11,24 @@ const scenes = new Map();
 // perspective divide reads as depth without distorting a 5-vertex complex.
 const CAMERA_DISTANCE = 4.2;
 
+// How far the perspective divide can push a vertex beyond its flat offset. The
+// worst case is a vertex tilted so that sin(angle) = 1/CAMERA_DISTANCE, where
+// cos(t)/(CAMERA_DISTANCE - sin(t)) peaks; fitting to this rather than to the
+// flat radius keeps a rotation from ever pushing the model past the margin.
+const MAX_PERSPECTIVE_SPREAD =
+  CAMERA_DISTANCE / Math.sqrt((CAMERA_DISTANCE * CAMERA_DISTANCE) - 1);
+
+// Pixels kept clear between the model and the canvas edge. A selected vertex
+// wears a 12.5px ring drawn with a 3px stroke, so anything less would clip the
+// highlight rather than the shape - and the highlight is the point.
+const FIT_MARGIN = 16;
+
+// Breathing room beyond the margin, which only guarantees nothing is clipped.
+// A shape sized to the last available pixel reads as cramped even when it fits,
+// and the rotation that would actually use the full span is rarely the one on
+// screen - so hand back a little and let the panel frame the complex.
+const FILL_FRACTION = 0.9;
+
 // Hit radii in CSS pixels. The backing store is sized to the element (see
 // resize), so drawing and hit-testing share one coordinate system and these
 // mean the same thing on every screen.
@@ -162,11 +180,36 @@ function project(scene) {
     radius = Math.max(radius, Math.hypot(verts[3 * i] - cx, verts[3 * i + 1] - cy, verts[3 * i + 2] - cz));
   }
 
+  // The diameter, not twice the radius. However the model is turned, no two
+  // vertices can project further apart than their true distance, so the widest
+  // the shape can ever appear is its own diameter - and for a tetrahedron that
+  // is 1.63 radii, not 2. Fitting the circumscribed sphere instead would give
+  // away that difference as permanent empty margin.
+  let diameter = 1e-6;
+  for (let i = 0; i < count; i++) {
+    for (let j = i + 1; j < count; j++) {
+      diameter = Math.max(diameter, Math.hypot(
+        verts[3 * i] - verts[3 * j],
+        verts[3 * i + 1] - verts[3 * j + 1],
+        verts[3 * i + 2] - verts[3 * j + 2]));
+    }
+  }
+
   const cosYaw = Math.cos(scene.yaw), sinYaw = Math.sin(scene.yaw);
   const cosPitch = Math.cos(scene.pitch), sinPitch = Math.sin(scene.pitch);
-  const scale = (Math.min(width, height) * 0.38) / radius;
+  // Fit the model to the shorter side less the margin. Scaling off the model's
+  // own diameter rather than the projected extent keeps the size steady under
+  // rotation: fitting each frame's bounding box would make the shape breathe
+  // as it turns, which reads as the complex changing when only the camera did.
+  const span = (Math.min(width, height) - (2 * FIT_MARGIN)) * FILL_FRACTION;
+  const scale = Math.max(span, 1) / (diameter * MAX_PERSPECTIVE_SPREAD);
 
-  const projected = new Array(count);
+  // Two passes: rotate into view coordinates, then centre on what that actually
+  // spans. The centroid is not the middle of the silhouette - the open
+  // triangle's apex drags it towards one side - so centring on it would spend
+  // the margin unevenly and let the far side reach the edge first.
+  const offsets = new Array(count);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (let i = 0; i < count; i++) {
     const x = verts[3 * i] - cx, y = verts[3 * i + 1] - cy, z = verts[3 * i + 2] - cz;
 
@@ -177,10 +220,25 @@ function project(scene) {
 
     // Weak perspective: nearer vertices spread out, so the shape reads as 3D.
     const perspective = CAMERA_DISTANCE / (CAMERA_DISTANCE - (depth / radius));
+    const px = rx * scale * perspective;
+    const py = -ry * scale * perspective;
+    offsets[i] = { x: px, y: py, depth };
+
+    minX = Math.min(minX, px);
+    maxX = Math.max(maxX, px);
+    minY = Math.min(minY, py);
+    maxY = Math.max(maxY, py);
+  }
+
+  const midX = count > 0 ? (minX + maxX) / 2 : 0;
+  const midY = count > 0 ? (minY + maxY) / 2 : 0;
+
+  const projected = new Array(count);
+  for (let i = 0; i < count; i++) {
     projected[i] = {
-      x: (width / 2) + (rx * scale * perspective),
-      y: (height / 2) - (ry * scale * perspective),
-      depth
+      x: (width / 2) + (offsets[i].x - midX),
+      y: (height / 2) + (offsets[i].y - midY),
+      depth: offsets[i].depth
     };
   }
   scene.projected = projected;
@@ -272,12 +330,12 @@ function render(scene) {
   drawHighlight(scene, points, selectColour, relatedColour);
 
   ctx.fillStyle = vertexColour;
-  ctx.font = '600 12px system-ui, sans-serif';
+  ctx.font = '600 13px system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (let i = 0; i < points.length; i++) {
     ctx.beginPath();
-    ctx.arc(points[i].x, points[i].y, 5.5, 0, 2 * Math.PI);
+    ctx.arc(points[i].x, points[i].y, 7, 0, 2 * Math.PI);
     ctx.fill();
     ctx.fillStyle = surfaceColour;
     ctx.fillText(String(i), points[i].x, points[i].y + 0.5);
@@ -316,7 +374,9 @@ function drawSimplex(scene, points, dimension, index, colour, emphasis) {
   if (dimension === 0) {
     ctx.lineWidth = emphasis ? 3 : 2.5;
     ctx.beginPath();
-    ctx.arc(points[index].x, points[index].y, emphasis ? 11 : 9, 0, 2 * Math.PI);
+    // Clear of the 7px vertex dot: the ring reads as a ring around the number,
+    // not as a thicker dot.
+    ctx.arc(points[index].x, points[index].y, emphasis ? 12.5 : 10.5, 0, 2 * Math.PI);
     ctx.stroke();
     return;
   }
