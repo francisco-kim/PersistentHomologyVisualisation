@@ -30,6 +30,12 @@ jobs:
       - name: Run topology tests
         run: dotnet test tests/PersistentHomologyCore.Tests
 
+      # A malformed stylesheet does not fail the build - the browser discards
+      # what it cannot read and paints the rest - so nothing else here would
+      # stop one reaching Pages.
+      - name: Check the stylesheets parse
+        run: python3 .github/check-stylesheets.py
+
       - name: Publish (Release, AOT)
         run: dotnet publish src/PersistentHomologyWeb -c Release -p:EnableAot=true -o publish
 

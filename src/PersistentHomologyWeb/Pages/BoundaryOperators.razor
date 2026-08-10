@@ -38,9 +38,42 @@
                 <span class="readout-label">tetrahedra</span>
                 <span class="readout-value">@State.Complex.Count(3)</span>
             </div>
-            <div class="readout" title="Euler characteristic: the counts to the left, alternating. It also equals the Betti numbers alternating — see the panel beside the rank table.">
-                <span class="readout-label">χ</span>
+            <div class="readout" title="Euler characteristic: the counts to the left, alternating. It also equals the Betti numbers alternating — both sums are worked out beside it.">
+                <span class="readout-label" data-katex="\chi"></span>
                 <span class="readout-value">@Signed(State.Complex.EulerCharacteristic)</span>
+            </div>
+
+            @* The same number counted twice over: once off the simplices, once
+               off the holes. Shown live because the equality is far more
+               convincing when both sides move under the fill-level control and
+               keep agreeing.
+
+               Run along one line rather than stacked a sum per line. Stacking
+               put the two sums digit above digit, which is the better way to
+               read them against each other, but it cost three lines of a panel
+               that has to share a row with the counts - and the sums are short
+               enough that following them across is no hardship. Each sum still
+               holds together as a unit: they wrap between one another, never
+               inside one.
+
+               Rides in the readout row, in the space the counts leave to their
+               right, rather than in a block of its own: the first sum is those
+               very counts alternating, so it belongs level with them rather
+               than somewhere further down the panel. *@
+            <div class="euler-panel">
+                <span class="euler-label">Euler characteristic</span>
+                <div class="euler-identity">
+                    <span class="euler-symbol" data-katex="\chi"></span>
+                    <span class="euler-op">=</span>
+                    <span class="euler-sum">@EulerFromCounts()</span>
+                    <span class="euler-op">=</span>
+                    <span class="euler-sum">@EulerFromBetti()</span>
+                    <span class="euler-op">=</span>
+                    <span class="euler-sum euler-total">@Signed(State.Complex.EulerCharacteristic)</span>
+                </div>
+                <span class="euler-note">
+                    alternating simplices, then alternating Betti numbers
+                </span>
             </div>
         </div>
         <p class="control-hint">
@@ -173,38 +206,6 @@
                         }
                     </span>
 
-                    @* The same number counted twice over: once off the simplices,
-                       once off the holes. Shown live because the equality is far
-                       more convincing when both sides move under the fill-level
-                       control and keep agreeing.
-
-                       Stacked on its own line each rather than run together on
-                       one, so the two sums sit directly above one another and
-                       can be compared term by term - which is the whole point of
-                       showing both. Both always have the same number of terms.
-
-                       Named above rather than beside the symbol: the panel is
-                       400px at its widest, and a label sharing the first row
-                       would either push the sums off the edge or indent rows
-                       two and three away from the one they are compared with. *@
-                    <span class="euler-label">Euler characteristic</span>
-                    <div class="euler-identity">
-                        <span class="euler-symbol" data-katex="\chi"></span>
-                        <span class="euler-op">=</span>
-                        <span class="euler-sum">@EulerFromCounts()</span>
-
-                        <span></span>
-                        <span class="euler-op">=</span>
-                        <span class="euler-sum">@EulerFromBetti()</span>
-
-                        <span></span>
-                        <span class="euler-op">=</span>
-                        <span class="euler-sum euler-total">@Signed(State.Complex.EulerCharacteristic)</span>
-                    </div>
-                    <span class="betti-summary-note">
-                        simplices alternating, then Betti numbers alternating —
-                        always the same number
-                    </span>
                 </div>
             </div>
 

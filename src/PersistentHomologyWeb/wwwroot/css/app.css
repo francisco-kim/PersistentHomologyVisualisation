@@ -928,36 +928,56 @@ input[type="number"] {
     color: var(--text-muted);
 }
 
-/* Carries the rule that used to sit on the identity below it, so the heading
-   and the sums it names stay on the same side of the divide. */
+/* Rides at the right-hand end of the readout row, in the space the five counts
+   leave over. Pushed there by an auto margin rather than given a width, so it
+   keeps its distance from the counts however wide their labels run - and drops
+   onto a line of its own once the row is too narrow to hold both. */
+.euler-panel {
+    /* A stated basis, not auto: measured on its contents this block is as wide
+       as its sentence unwrapped, which never fits the space the counts leave
+       and would send it onto a line of its own every time. The basis is a width
+       the sums are comfortable in; growing from there takes whatever the counts
+       actually left over, and the sentence wraps inside it. */
+    flex: 1 1 14rem;
+    max-width: 22rem;
+    margin-left: auto;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--border);
+    /* Aligns the label with the counts' labels instead of centring the block
+       against a row it is much taller than. */
+    align-self: flex-start;
+}
+
 .euler-label {
     display: block;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
     font-size: 0.78rem;
     color: var(--text-muted);
 }
 
-/* The chi identity, one step per row with the equals signs in a column of their
-   own. Monospaced and tabular so the two sums sit digit above digit and can be
-   read against each other - they always have the same number of terms. Ruled
-   off from the Betti numbers above - by the label rather than by this grid -
-   because it is a second reading of the same block's numbers rather than more
-   of the first. */
+.euler-note {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* The chi identity, running along a line and wrapping between its sums rather
+   than being stacked one per row: the panel shares a row with the counts, and
+   three lines was more of that row's height than a restatement of one number
+   is worth. Monospaced and tabular so the terms keep an even rhythm. */
 .euler-identity {
-    display: grid;
-    grid-template-columns: auto auto 1fr;
-    gap: 0.15rem 0.45rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.4rem;
     margin-top: 0.3rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-variant-numeric: tabular-nums;
     font-size: 0.85rem;
     color: var(--text-primary);
-    overflow-x: auto;
 }
 
-/* A sum never breaks mid-formula; the grid scrolls instead. */
+/* A sum never breaks mid-formula - the line breaks between sums instead. */
 .euler-sum {
     white-space: nowrap;
 }
