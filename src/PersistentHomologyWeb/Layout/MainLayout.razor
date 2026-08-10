@@ -10,14 +10,19 @@
             <a class="app-byline" href="https://francisco-kim.github.io"
                target="_blank" rel="noopener">by Francisco Kim</a>
         </div>
+        @* Plain anchors with the active state worked out here rather than
+           NavLinks: the explanations live under /boundary as well as at the
+           root, so NavLink's prefix matching would light up "Boundary
+           operators" and "Explanation" at the same time. Blazor's router still
+           intercepts these, so they are ordinary in-app navigation. *@
         <nav class="app-nav">
-            <NavLink href="" Match="NavLinkMatch.All">Simulator</NavLink>
-            <NavLink href="boundary">Boundary operators</NavLink>
-            @* Follows whichever tab you are on, and opens in a new browser tab
-               so the maths sits beside the thing it describes. *@
-            <a class="app-nav-out" href="@ExplanationHref" target="_blank" rel="noopener">
-                Explanation
-            </a>
+            <a href="" class="@ActiveIf(Route.Length == 0)">Simulator</a>
+            <a href="boundary" class="@ActiveIf(Route == "boundary")">Boundary operators</a>
+            @* Follows whichever tab you are on. Navigates in place rather than
+               popping a browser tab: the explanations carry their own strip for
+               switching between the two, so they behave like a third section of
+               the app, and this nav is the way back out of them. *@
+            <a href="@ExplanationHref" class="@ActiveIf(OnExplanation)">Explanation</a>
         </nav>
     </header>
 
@@ -40,11 +45,24 @@
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => StateHasChanged();
 
+    // Query and fragment stripped so a link never fails to light up because of
+    // something hanging off the end of the URL.
+    private string Route =>
+        Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+
+    // Standing on an explanation already, the link keeps you there rather than
+    // throwing you across to the other one - the strip on the page itself is
+    // what switches between them.
     private string ExplanationHref => InBoundarySection ? "boundary/explainer" : "explainer";
 
     private bool InBoundarySection =>
-        Navigation.ToBaseRelativePath(Navigation.Uri)
-                  .StartsWith("boundary", StringComparison.OrdinalIgnoreCase);
+        Route.StartsWith("boundary", StringComparison.OrdinalIgnoreCase);
+
+    private bool OnExplanation =>
+        Route.Equals("explainer", StringComparison.OrdinalIgnoreCase) ||
+        Route.Equals("boundary/explainer", StringComparison.OrdinalIgnoreCase);
+
+    private static string ActiveIf(bool active) => active ? "active" : "";
 
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 }

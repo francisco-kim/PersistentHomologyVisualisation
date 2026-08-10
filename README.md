@@ -66,9 +66,10 @@ $(\delta^0 f)([ab]) = f(b) - f(a)$ makes $H^0 \cong H_0$ concrete.
 
 ## Layout
 
-The app has two interactive tabs, and each links out to its own explanation
-page — opened in a new browser tab, so the maths sits beside the thing it
-describes rather than pushing it off the screen:
+The app has two interactive tabs, and each links to its own explanation page.
+The header's **Explanation** link opens whichever one matches the tab you are
+on; once there, a strip of subtabs switches between the two without going back
+through the app.
 
 | Tab | Explanation |
 | --- | --- |

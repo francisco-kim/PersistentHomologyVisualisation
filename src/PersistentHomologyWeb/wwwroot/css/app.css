@@ -121,14 +121,6 @@ html, body {
     font-weight: 600;
 }
 
-/* Leaves the app rather than switching tab within it, so it is marked and
-   never picks up the active state. */
-.app-nav-out::after {
-    content: " ↗";
-    font-size: 0.8em;
-    color: var(--text-muted);
-}
-
 .app-footer {
     margin-top: 2rem;
     padding-top: 1rem;
@@ -537,18 +529,41 @@ input[type="number"] {
     color: var(--text-secondary);
 }
 
-.explainer-link-hint {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-}
-
-.explainer-link-hint::after {
-    content: " ↗";
-}
-
 /* ---------- explainer ---------- */
+
+/* Underlined tabs rather than the header nav's filled pills: these switch
+   between two documents inside the same page, and reusing the pill would read
+   as a second copy of the app nav sitting one line below the first. */
+.explainer-tabs {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.1rem;
+    max-width: 62rem;
+}
+
+.explainer-tab {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.92rem;
+    /* Transparent, not absent: the active tab must not shift the text up by
+       two pixels when it gains its underline. */
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.explainer-tab:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--border);
+}
+
+.explainer-tab.active {
+    color: var(--text-primary);
+    font-weight: 600;
+    border-bottom-color: var(--accent);
+}
 
 .explainer {
     background: var(--surface-1);
@@ -672,6 +687,13 @@ input[type="number"] {
     /* Equal-height cards: the matrices have different row counts, and ragged
        card bottoms read as misalignment rather than as information. */
     align-items: stretch;
+    /* Shrink-wraps to the cards instead of running to the page edge, so the
+       degree-0 bar riding in the same container can be told to span the row
+       and land on exactly the width the matrices occupy. Clamped, so once the
+       cards no longer fit on one line the strip fills the page and they wrap
+       inside it as before. */
+    width: fit-content;
+    max-width: 100%;
 }
 
 .matrix-card {
@@ -728,8 +750,23 @@ input[type="number"] {
 /* Degree 0, on its own line under the strip. It carries a sentence rather than
    a table, so it is laid out along the page instead of down it: title and shape
    at the left, the sentence running on beside them. */
+   It sits inside the strip as a row of its own rather than after it, which is
+   what pins its width to the matrices above instead of to the page: the strip
+   shrink-wraps its cards, and a flex item basing at 100% of that is exactly as
+   wide as the row it hangs under. */
 .matrix-zero-bar {
-    margin-top: 1rem;
+    /* Zero width with a percentage minimum, rather than a 100% flex-basis. The
+       strip sizes itself to its contents, and a percentage resolves against a
+       width that is still being decided - so it is ignored while the strip is
+       measured, and applies once the strip has a width. A 100% basis would
+       instead be measured as this bar's own sentence, and a long sentence would
+       drag the strip wider than the matrices it is supposed to sit under. The
+       minimum still forces the bar onto a line of its own. */
+    flex: 0 0 auto;
+    width: 0;
+    min-width: 100%;
+    /* The strip's gap already separates it from the cards above. */
+    margin-top: 0;
 }
 
 .matrix-zero-bar .matrix-card {

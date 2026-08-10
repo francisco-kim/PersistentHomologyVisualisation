@@ -1,0 +1,12 @@
+@* The two explanations are siblings, but the header's Explanation link only
+   ever opens the one matching the app tab you left from. This strip lets a
+   reader who landed on either walk straight across to the other instead of
+   going back through the app to switch. *@
+<nav class="explainer-tabs" aria-label="Explanations">
+    <NavLink class="explainer-tab" href="explainer" Match="NavLinkMatch.All">
+        Simulator
+    </NavLink>
+    <NavLink class="explainer-tab" href="boundary/explainer">
+        Boundary operators
+    </NavLink>
+</nav>

@@ -194,20 +194,24 @@
                         RelatedIndices="State.RelatedIndices"
                         OnSelect="OnMatrixSelect" />
     }
-</div>
 
-@* Degree 0 trails the strip rather than leading it, and gets a bar of its own
-   rather than a card in the row. It is the zero map at every preset and every
-   fill level, so it never rewards a glance and does not deserve a slot beside
-   the matrices that do change - but it has no table to show either, only a
-   sentence, so a full-width bar wastes none of the height a card would. *@
-<div class="matrix-zero-bar">
-    <BoundaryMatrix Matrix="State.Displayed(0)"
-                    Rows="State.DisplayedRows(0)"
-                    Columns="State.DisplayedColumns(0)"
-                    Degree="0"
-                    Transposed="State.Transposed"
-                    Coefficients="State.Coefficients" />
+    @* Degree 0 trails the strip rather than leading it, and gets a bar of its
+       own rather than a card in the row. It is the zero map at every preset and
+       every fill level, so it never rewards a glance and does not deserve a slot
+       beside the matrices that do change - but it has no table to show either,
+       only a sentence, so a bar wastes none of the height a card would.
+
+       Kept inside the strip so it wraps onto its own line underneath and
+       inherits the row's width, rather than sitting after the strip where
+       nothing would tie the two together. *@
+    <div class="matrix-zero-bar">
+        <BoundaryMatrix Matrix="State.Displayed(0)"
+                        Rows="State.DisplayedRows(0)"
+                        Columns="State.DisplayedColumns(0)"
+                        Degree="0"
+                        Transposed="State.Transposed"
+                        Coefficients="State.Coefficients" />
+    </div>
 </div>
 
 @if (State.DoubleBoundary is { } expansion)
@@ -288,15 +292,16 @@ else
     </section>
 }
 
-<a class="explainer-link" href="boundary/explainer" target="_blank" rel="noopener">
+<a class="explainer-link" href="boundary/explainer">
     <span class="explainer-link-label">Read the explanation</span>
     <span class="explainer-link-text">
         Chains and orientation, the alternating-sign boundary formula, why
-        &#8706;<sub>0</sub> is empty, &#8706;&#8728;&#8706; = 0, Betti numbers as ranks,
-        &chi; counted two ways, and what transposing the matrices means &mdash;
-        the coboundary, the discrete gradient, and cohomology.
+        <span data-katex="\partial_0"></span> is empty,
+        <span data-katex="\partial \circ \partial = 0"></span>, Betti numbers as
+        ranks, <span data-katex="\chi"></span> counted two ways, and what
+        transposing the matrices means &mdash; the coboundary, the discrete
+        gradient, and cohomology.
     </span>
-    <span class="explainer-link-hint">Opens in a new tab</span>
 </a>
 
 @code {
