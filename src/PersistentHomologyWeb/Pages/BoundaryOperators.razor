@@ -143,8 +143,35 @@
                     </table>
                 </div>
                 <div class="betti-summary">
-                    <span class="betti-summary-value">β = (@BettiList())</span>
-                    <span class="betti-summary-note">@BettiNote()</span>
+                    <span class="betti-summary-value">
+                        <span data-katex="\beta"></span> = (@BettiList())
+                    </span>
+
+                    @* Built in markup rather than joined into one string, so the
+                       beta_3 entry can be set in KaTeX like every other symbol
+                       on the page instead of being spelled with a Unicode
+                       subscript. *@
+                    <span class="betti-summary-note">
+                        @for (var index = 0; index < State.Homology.Count; index++)
+                        {
+                            var info = State.Homology[index];
+
+                            if (index > 0)
+                            {
+                                <text>, </text>
+                            }
+
+                            if (info.Dimension >= 3)
+                            {
+                                <span data-katex="\beta_3"></span>
+                                <text> (3D voids)</text>
+                            }
+                            else
+                            {
+                                <text>@BettiName(info.Dimension)</text>
+                            }
+                        }
+                    </span>
 
                     @* The same number counted twice over: once off the simplices,
                        once off the holes. Shown live because the equality is far
@@ -154,9 +181,15 @@
                        Stacked on its own line each rather than run together on
                        one, so the two sums sit directly above one another and
                        can be compared term by term - which is the whole point of
-                       showing both. Both always have the same number of terms. *@
+                       showing both. Both always have the same number of terms.
+
+                       Named above rather than beside the symbol: the panel is
+                       400px at its widest, and a label sharing the first row
+                       would either push the sums off the edge or indent rows
+                       two and three away from the one they are compared with. *@
+                    <span class="euler-label">Euler characteristic</span>
                     <div class="euler-identity">
-                        <span class="euler-symbol">χ</span>
+                        <span class="euler-symbol" data-katex="\chi"></span>
                         <span class="euler-op">=</span>
                         <span class="euler-sum">@EulerFromCounts()</span>
 
@@ -468,18 +501,18 @@ else
     // solid), and a caption listing three names beside two or four numbers
     // invites the reader to line them up wrongly.
     //
-    // "3D voids" names beta_3 by the dimension of the class, the same
-    // convention the explainer uses when it calls beta_k the count of
-    // k-dimensional holes. It is worth spelling out even though nothing here
-    // can have one - beta_3 is zero for anything that fits in three-space -
-    // because a trailing zero with no name attached looks like a defect.
-    private string BettiNote() => string.Join(", ", State.Homology.Select(info => info.Dimension switch
+    // Dimension 3 has no plain-English name here and is written out as
+    // "beta_3 (3D voids)" by the caption itself: it names the class by its
+    // dimension, the same convention the explainer uses when it calls beta_k
+    // the count of k-dimensional holes. Worth spelling out even though nothing
+    // here can have one - beta_3 is zero for anything that fits in three-space
+    // - because a trailing zero with no name attached looks like a defect.
+    private static string BettiName(int dimension) => dimension switch
     {
         0 => "pieces",
         1 => "loops",
-        2 => "cavities",
-        _ => "β₃ (3D voids)"
-    }));
+        _ => "cavities"
+    };
 
     private static string DimensionName(int dimension) => dimension switch
     {

@@ -749,11 +749,10 @@ input[type="number"] {
 
 /* Degree 0, on its own line under the strip. It carries a sentence rather than
    a table, so it is laid out along the page instead of down it: title and shape
-   at the left, the sentence running on beside them. */
+   at the left, the sentence running on beside them.
+
    It sits inside the strip as a row of its own rather than after it, which is
-   what pins its width to the matrices above instead of to the page: the strip
-   shrink-wraps its cards, and a flex item basing at 100% of that is exactly as
-   wide as the row it hangs under. */
+   what pins its width to the matrices above instead of to the page. */
 .matrix-zero-bar {
     /* Zero width with a percentage minimum, rather than a 100% flex-basis. The
        strip sizes itself to its contents, and a percentage resolves against a
@@ -765,6 +764,11 @@ input[type="number"] {
     flex: 0 0 auto;
     width: 0;
     min-width: 100%;
+    /* Cancels the column gap the strip counts in front of this bar when it
+       measures itself. The bar takes no width of its own there, but the gap
+       does, and it would leave the strip one gap wider than its widest card -
+       so the bar would hang past the matrices it is meant to line up with. */
+    margin-right: -1rem;
     /* The strip's gap already separates it from the cards above. */
     margin-top: 0;
 }
@@ -924,18 +928,28 @@ input[type="number"] {
     color: var(--text-muted);
 }
 
+/* Carries the rule that used to sit on the identity below it, so the heading
+   and the sums it names stay on the same side of the divide. */
+.euler-label {
+    display: block;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
 /* The chi identity, one step per row with the equals signs in a column of their
    own. Monospaced and tabular so the two sums sit digit above digit and can be
    read against each other - they always have the same number of terms. Ruled
-   off because it is a second reading of the same block's numbers rather than
-   more of the first. */
+   off from the Betti numbers above - by the label rather than by this grid -
+   because it is a second reading of the same block's numbers rather than more
+   of the first. */
 .euler-identity {
     display: grid;
     grid-template-columns: auto auto 1fr;
     gap: 0.15rem 0.45rem;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
+    margin-top: 0.3rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-variant-numeric: tabular-nums;
     font-size: 0.85rem;
