@@ -1,7 +1,8 @@
 # The boundary-operator tab
 
-Design notes for `/boundary` and `/boundary/explainer`. The README says what the
-tab *is*; this says how it is put together and which parts are load-bearing.
+Design notes for `/boundary` and `/boundary/explainer`. [`tabs.md`](tabs.md)
+says what the tab *is*; this says how it is put together and which parts are
+load-bearing.
 
 Files:
 
@@ -41,27 +42,30 @@ correctness rule rather than an optimisation:
   and **clears the selection**. It has to: the selection is a
   `(dimension, index)` pair, and after the complex changes, index 3 in
   dimension 2 denotes a different triangle.
-- **Coefficient changes** (Z vs Z/2) → `RecomputeMatrices()` only, and the
-  selection **survives**. The complex is untouched, so the indices still mean
-  what they meant — and keeping the selection is the point. Ticking Z/2 with a
-  tetrahedron selected is how you see what the signs were doing; dropping the
-  selection would take the comparison away at the moment it was asked for.
-- **Transpose changes** → `RecomputeRelated()` only. By `rank(M) = rank(M^T)`
-  it cannot move a Betti number; it only flips the highlight from faces to
-  cofaces.
+- **Coefficient changes** ($\mathbb{Z}$ vs $\mathbb{Z}/2$) → `RecomputeMatrices()`
+  only, and the selection **survives**. The complex is untouched, so the indices
+  still mean what they meant — and keeping the selection is the point. Ticking
+  $\mathbb{Z}/2$ with a tetrahedron selected is how you see what the signs were
+  doing; dropping the selection would take the comparison away at the moment it
+  was asked for.
+- **Transpose changes** → `RecomputeRelated()` only. By
+  $\operatorname{rank}(M) = \operatorname{rank}(M^{\top})$ it cannot move a
+  Betti number; it only flips the highlight from faces to cofaces.
 
 ## Coefficients are a display concern too
 
-Over Z/2 there is no sign to show, so the UI must not print one. Three places
-follow the coefficient setting: `BoundaryMatrix.Format` (writes `1`, not `+1`),
-the `∂∘∂ = 0` expansion terms, and that panel's prose — which otherwise claims
+Over $\mathbb{Z}/2$ there is no sign to show, so the UI must not print one.
+Three places follow the coefficient setting: `BoundaryMatrix.Format` (writes
+`1`, not `+1`), the $\partial \circ \partial = 0$ expansion terms, and that
+panel's prose — which otherwise claims
 terms cancel "with opposite signs" while showing none. The panel is the one
 place a reader can watch the mechanism, so the two modes say different things
 on purpose.
 
 ## Where each matrix goes, and how it is labelled
 
-`∂₁` and above live in `.matrix-strip`, one card each, wrapping. `∂₀` does not: it
+$\partial_1$ and above live in `.matrix-strip`, one card each, wrapping.
+$\partial_0$ does not: it
 is the zero map at every preset and every fill level, so it never rewards a
 glance and does not deserve a slot beside the matrices that do change. It also
 has no table to show — only a sentence — so a card would waste its height. It
@@ -69,9 +73,10 @@ gets `.matrix-zero-bar`, a full-width bar trailing the strip, laid out along the
 page rather than down it. It lived in the controls panel before that, which made
 the panel taller than the canvas beside it.
 
-The coboundary label is `δ^(k-1) = ∂ₖᵀ`, **except at degree 0**, which is
-labelled `∂₀ᵀ` alone. `δ^(-1)` is what the formula gives and it is internally
-consistent, but `C^(-1)` is a group this app never introduces and the explainer
+The coboundary label is $\delta^{k-1} = \partial_k^{\top}$, **except at
+degree 0**, which is labelled $\partial_0^{\top}$ alone. $\delta^{-1}$ is what
+the formula gives and it is internally consistent, but $C^{-1}$ is a group this
+app never introduces and the explainer
 never names, so a negative superscript reads as a bug. Any future change to
 `TitleTex` has to keep that special case.
 
@@ -149,32 +154,35 @@ and it 404ed. Check the network panel after adding notation.
 changes.** `window.renderKatex()` typesets every `[data-katex]` element, and a
 Blazor re-render discards whatever KaTeX injected into a span it owns. Pages
 therefore set a `_needsKatex` flag and typeset in the *next* `OnAfterRenderAsync`
-pass. Anything that swaps maths in or out — selecting (the `∂∘∂` panel appears),
-transposing (captions flip between `∂` and `δ`), changing coefficients — must
-set that flag.
+pass. Anything that swaps maths in or out — selecting (the
+$\partial \circ \partial$ panel appears), transposing (captions flip between
+$\partial$ and $\delta$), changing coefficients — must set that flag.
 
 ## Reading the Betti table
 
 `SimplicialHomology.Compute` returns one row per dimension `0..MaxDimension`, so
-at **solid** fill there are four rows and β = (1, 1, 0, 0). The trailing β₃ is
-honest — it is a real Betti number, and its row shows `rank ∂₃ = 1` killing the
+at **solid** fill there are four rows and $\beta = (1, 1, 0, 0)$. The trailing
+$\beta_3$ is honest — it is a real Betti number, and its row shows
+$\operatorname{rank} \partial_3 = 1$ killing the
 tetrahedron's cavity — but it means the summary caption cannot be the fixed
 string "pieces, loops, cavities": at frame fill there are two entries and at
 solid there are four. It is generated per entry.
 
-**β₃ is always zero here, structurally.** Nothing above the tetrahedra can
-cancel a 3-chain, so β₃ = dim ker ∂₃, and a non-zero element of that kernel
+**$\beta_3$ is always zero here, structurally.** Nothing above the tetrahedra
+can cancel a 3-chain, so $\beta_3 = \dim \ker \partial_3$, and a non-zero
+element of that kernel
 would be a solid lump of tetrahedra whose surface cancels away completely. No
 arrangement of solids in ordinary space does that. It takes something that does
 not embed in three dimensions — the boundary of a 4-simplex, five tetrahedra
-glued into a 3-sphere — to get β₃ = 1. The entry is kept anyway, because χ's
-alternating sum uses it and because dropping a row the table shows would be
-worse, but it is captioned `β₃ (3D voids)` so a permanent zero does not look
-like a defect. That names it by the dimension of the class, matching the
-explainer's "β_k counts k-dimensional holes"; the competing convention names the
-enclosed region instead, under which "3D void" would mean β₂.
+glued into a 3-sphere — to get $\beta_3 = 1$. The entry is kept anyway, because
+$\chi$'s alternating sum uses it and because dropping a row the table shows
+would be worse, but it is captioned $\beta_3$ (3D voids) so a permanent zero
+does not look like a defect. That names it by the dimension of the class,
+matching the explainer's "$\beta_k$ counts $k$-dimensional holes"; the competing
+convention names the enclosed region instead, under which "3D void" would mean
+$\beta_2$.
 
-## The χ identity block
+## The $\chi$ identity block
 
 Under the Betti summary, the Euler characteristic is written twice over — the
 simplex counts alternating, then the Betti numbers alternating, then the value
@@ -187,8 +195,8 @@ does not trail a meaningless `+ 0 − 0`. `.euler-identity` is a three-column gr
 — symbol, equals, sum — so the equals signs form their own column and the two
 sums sit digit above digit; monospace and `tabular-nums` are load-bearing for
 that alignment, not decoration. The value uses a typographic minus (U+2212) to
-match the one separating the terms, as does the χ readout beside the simplex
-counts.
+match the one separating the terms, as does the $\chi$ readout beside the
+simplex counts.
 
 Each sum is `white-space: nowrap` inside a scroll container, which is why
 `.sim-side` and `.control-group` carry `min-width: 0`. Without it a grid or flex
@@ -197,30 +205,21 @@ on a phone instead of the sum scrolling inside itself.
 
 ## Verifying changes
 
-```sh
-dotnet test                                     # topology tests (Core only)
-dotnet run --project src/PersistentHomologyWeb  # dev server, IL-interpreted and slow
-```
+Commands and build caveats are in [`repository.md`](repository.md). There is no
+automated test for the Web layer, so the presets' expected values are worth
+restating here because a rank that is off by one turns a Betti number into a
+lie:
 
-There is no automated test for the Web layer — `PersistentHomologyCore.Tests`
-covers the topology only, and the presets' expected values are worth restating
-because a rank that is off by one turns a Betti number into a lie:
-
-| preset | frame | surface | solid | χ (frame/surface/solid) |
+| preset | frame | surface | solid | $\chi$ (frame/surface/solid) |
 | --- | --- | --- | --- | --- |
-| Tetrahedron | (1, 3) | (1, 0, 1) | (1, 0, 0, 0) | −2 / 2 / 1 |
-| Tetrahedron + open triangle | (1, 4) | (1, 1, 1) | (1, 1, 0, 0) | −3 / 1 / 0 |
+| Tetrahedron | (1, 3) | (1, 0, 1) | (1, 0, 0, 0) | $-2$ / $2$ / $1$ |
+| Tetrahedron + open triangle | (1, 4) | (1, 1, 1) | (1, 1, 0, 0) | $-3$ / $1$ / $0$ |
 
-Both agree over Z and over Z/2 (no torsion here). χ must equal the alternating
-sum of the β column, and every row must satisfy
-`dim ker ∂ₖ = nₖ − rank ∂ₖ` and `βₖ = dim ker ∂ₖ − rank ∂ₖ₊₁`. Multiplying two
-adjacent rendered matrices must give the zero matrix.
-
-**Restart the dev server after every build.** `dotnet run --no-build` serves
-fingerprinted asset names from a manifest; rebuilding underneath a live server
-leaves it advertising `dotnet.<oldhash>.js`, and the page dies with
-`Failed to start platform … Failed to fetch dynamically imported module` plus a
-404. The symptom looks like a code error and is not one.
+Both agree over $\mathbb{Z}$ and over $\mathbb{Z}/2$ (no torsion here). $\chi$
+must equal the alternating sum of the $\beta$ column, and every row must satisfy
+$\dim \ker \partial_k = n_k - \operatorname{rank} \partial_k$ and
+$\beta_k = \dim \ker \partial_k - \operatorname{rank} \partial_{k+1}$.
+Multiplying two adjacent rendered matrices must give the zero matrix.
 
 **Do not judge layout from a full-page screenshot.** `.lattice-panel` is sticky
 above 900px, and a stuck element is composited into every stitched segment of a
